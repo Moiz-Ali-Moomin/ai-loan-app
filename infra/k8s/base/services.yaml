@@ -1,0 +1,356 @@
+---
+# Policy Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: policy-service
+  namespace: loan-platform
+  labels:
+    app: policy-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: policy-service
+  template:
+    metadata:
+      labels:
+        app: policy-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3002"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: loan-platform-sa
+      containers:
+        - name: policy-service
+          image: loan-platform/policy-service:latest
+          ports:
+            - containerPort: 3002
+          env:
+            - name: PORT
+              value: "3002"
+            - name: OTEL_SERVICE_NAME
+              value: "policy-service"
+          envFrom:
+            - configMapRef:
+                name: loan-platform-config
+            - secretRef:
+                name: loan-platform-secrets
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3002
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3002
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: policy-service-service
+  namespace: loan-platform
+spec:
+  selector:
+    app: policy-service
+  ports:
+    - port: 3002
+      targetPort: 3002
+      name: http
+---
+# AI Execution Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-execution-service
+  namespace: loan-platform
+  labels:
+    app: ai-execution-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ai-execution-service
+  template:
+    metadata:
+      labels:
+        app: ai-execution-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3003"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: loan-platform-sa
+      containers:
+        - name: ai-execution-service
+          image: loan-platform/ai-execution-service:latest
+          ports:
+            - containerPort: 3003
+          env:
+            - name: PORT
+              value: "3003"
+            - name: OTEL_SERVICE_NAME
+              value: "ai-execution-service"
+          envFrom:
+            - configMapRef:
+                name: loan-platform-config
+            - secretRef:
+                name: loan-platform-secrets
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3003
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3003
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-execution-service-service
+  namespace: loan-platform
+spec:
+  selector:
+    app: ai-execution-service
+  ports:
+    - port: 3003
+      targetPort: 3003
+      name: http
+---
+# Audit Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audit-service
+  namespace: loan-platform
+  labels:
+    app: audit-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: audit-service
+  template:
+    metadata:
+      labels:
+        app: audit-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3004"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: loan-platform-sa
+      containers:
+        - name: audit-service
+          image: loan-platform/audit-service:latest
+          ports:
+            - containerPort: 3004
+          env:
+            - name: PORT
+              value: "3004"
+            - name: OTEL_SERVICE_NAME
+              value: "audit-service"
+          envFrom:
+            - configMapRef:
+                name: loan-platform-config
+            - secretRef:
+                name: loan-platform-secrets
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3004
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3004
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit-service-service
+  namespace: loan-platform
+spec:
+  selector:
+    app: audit-service
+  ports:
+    - port: 3004
+      targetPort: 3004
+      name: http
+---
+# Event Consumer
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-consumer
+  namespace: loan-platform
+  labels:
+    app: event-consumer
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: event-consumer
+  template:
+    metadata:
+      labels:
+        app: event-consumer
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3005"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: loan-platform-sa
+      containers:
+        - name: event-consumer
+          image: loan-platform/event-consumer:latest
+          ports:
+            - containerPort: 3005
+          env:
+            - name: PORT
+              value: "3005"
+            - name: OTEL_SERVICE_NAME
+              value: "event-consumer"
+            - name: KAFKA_GROUP_ID_EVENTS
+              value: "event-consumer-group"
+          envFrom:
+            - configMapRef:
+                name: loan-platform-config
+            - secretRef:
+                name: loan-platform-secrets
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3005
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3005
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+---
+# Frontend
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: loan-platform
+  labels:
+    app: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: loan-platform/frontend:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NEXT_PUBLIC_API_URL
+              value: "https://api.loangov.example.com"
+            - name: NEXT_PUBLIC_TEMPORAL_UI_URL
+              value: "https://temporal.loangov.example.com"
+            - name: NEXT_PUBLIC_GRAFANA_URL
+              value: "https://grafana.loangov.example.com"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: loan-platform
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 3000
+      name: http

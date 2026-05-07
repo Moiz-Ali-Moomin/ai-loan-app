@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat)",
+      "Bash(sed -i s/SERVICE_NAME/__TRACKED_VAR__/g 'c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\\\\services$svc\\\\Dockerfile')",
+      "Bash([ ! -f \"services/$svc/tsconfig.json\" ])",
+      "Bash([ ! -f \"services/$svc/src/instrumentation.ts\" ])",
+      "Bash(node -e ' *)",
+      "Bash(node -e 'try{const d=require\\('\\\\''./__TRACKED_VAR__'\\\\''\\);console.log\\(d.type||'\\\\''none'\\\\''\\)}catch\\(e\\){console.log\\('\\\\''skip'\\\\''\\)}')"
+    ]
+  }
+}

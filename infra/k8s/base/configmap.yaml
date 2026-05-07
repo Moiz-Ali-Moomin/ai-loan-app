@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loan-platform-config
+  namespace: loan-platform
+data:
+  NODE_ENV: "production"
+  TEMPORAL_NAMESPACE: "loan-governance"
+  TEMPORAL_TASK_QUEUE: "loan-approval"
+  KAFKA_CLIENT_ID: "loan-platform"
+  AI_MOCK_MODE: "true"
+  LOG_LEVEL: "info"
+  HIGH_RISK_THRESHOLD: "0.75"
+  LOAN_AMOUNT_MANUAL_THRESHOLD: "500000"
+  HUMAN_APPROVAL_TIMEOUT: "86400"
+  OTEL_SERVICE_NAME: "loan-platform"
+  MINIO_BUCKET_PROMPTS: "ai-prompts"
+  MINIO_BUCKET_RESPONSES: "ai-responses"
+  MINIO_BUCKET_SNAPSHOTS: "workflow-snapshots"
+  MINIO_BUCKET_COMPLIANCE: "compliance-artifacts"

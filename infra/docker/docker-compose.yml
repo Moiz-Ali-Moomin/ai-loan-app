@@ -1,0 +1,567 @@
+version: '3.9'
+
+# =============================================================
+# AI Loan Governance Platform — Local Development Stack
+# =============================================================
+
+networks:
+  loan-platform:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+  zookeeper_data:
+  minio_data:
+  temporal_data:
+  grafana_data:
+  loki_data:
+  tempo_data:
+  prometheus_data:
+
+services:
+
+  # ============================================================
+  # INFRASTRUCTURE
+  # ============================================================
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: loan-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: loanapp
+      POSTGRES_PASSWORD: loanapp_pass
+      POSTGRES_DB: loandb
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts/postgres:/docker-entrypoint-initdb.d
+      - ../../infra/postgres/migrations:/migrations:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loanapp -d loandb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - loan-platform
+
+  redis:
+    image: redis:7-alpine
+    container_name: loan-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loan-platform
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    container_name: loan-zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loan-platform
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: loan-kafka
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=WARN,kafka.producer.async.DefaultEventHandler=WARN,state.change.logger=WARN"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    networks:
+      - loan-platform
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: loan-kafka-ui
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      SERVER_PORT: 8080
+    ports:
+      - "8090:8080"
+    networks:
+      - loan-platform
+
+  minio:
+    image: minio/minio:latest
+    container_name: loan-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loan-platform
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: loan-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://minio:9000 minioadmin minioadmin;
+        mc mb --ignore-existing local/ai-prompts;
+        mc mb --ignore-existing local/ai-responses;
+        mc mb --ignore-existing local/workflow-snapshots;
+        mc mb --ignore-existing local/compliance-artifacts;
+        mc mb --ignore-existing local/archived-traces;
+        mc policy set private local/ai-prompts;
+        mc policy set private local/ai-responses;
+        mc policy set private local/compliance-artifacts;
+        echo 'MinIO buckets initialized';
+      "
+    networks:
+      - loan-platform
+
+  # ============================================================
+  # TEMPORAL
+  # ============================================================
+
+  temporal-postgres:
+    image: postgres:16-alpine
+    container_name: loan-temporal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    volumes:
+      - temporal_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loan-platform
+
+  temporal:
+    image: temporalio/auto-setup:1.24.2
+    container_name: loan-temporal
+    restart: unless-stopped
+    depends_on:
+      temporal-postgres:
+        condition: service_healthy
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: temporal-postgres
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
+      ENABLE_ES: "false"
+      TEMPORAL_BROADCAST_ADDRESS: "0.0.0.0"
+      TEMPORAL_CORS_ORIGINS: "http://localhost:3000"
+    ports:
+      - "7233:7233"
+    healthcheck:
+      test: ["CMD", "tctl", "--address", "temporal:7233", "cluster", "health"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - loan-platform
+
+  temporal-ui:
+    image: temporalio/ui:2.26.2
+    container_name: loan-temporal-ui
+    restart: unless-stopped
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: http://localhost:3000
+    ports:
+      - "8088:8080"
+    networks:
+      - loan-platform
+
+  # ============================================================
+  # OPEN POLICY AGENT
+  # ============================================================
+
+  opa:
+    image: openpolicyagent/opa:latest-debug
+    container_name: loan-opa
+    restart: unless-stopped
+    command:
+      - "run"
+      - "--server"
+      - "--addr=0.0.0.0:8181"
+      - "--log-level=info"
+      - "--log-format=json"
+      - "--set=decision_logs.console=true"
+      - "/policies"
+    volumes:
+      - ../../infra/opa/policies:/policies:ro
+    ports:
+      - "8181:8181"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8181/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loan-platform
+
+  # ============================================================
+  # OBSERVABILITY — LGTM STACK
+  # ============================================================
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.101.0
+    container_name: loan-otel-collector
+    restart: unless-stopped
+    command: ["--config=/etc/otel-collector.yaml"]
+    volumes:
+      - ./observability/otel-collector.yaml:/etc/otel-collector.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "8889:8889"   # Prometheus metrics
+    depends_on:
+      - loki
+      - tempo
+      - prometheus
+    networks:
+      - loan-platform
+
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: loan-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki.yaml
+    volumes:
+      - ./observability/loki.yaml:/etc/loki/loki.yaml:ro
+      - loki_data:/loki
+    ports:
+      - "3200:3100"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3100/ready"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - loan-platform
+
+  tempo:
+    image: grafana/tempo:2.4.2
+    container_name: loan-tempo
+    restart: unless-stopped
+    command: -config.file=/etc/tempo.yaml
+    volumes:
+      - ./observability/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    ports:
+      - "3201:3200"   # Tempo query
+      - "4319:4317"   # OTLP gRPC (for direct send)
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3200/ready"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - loan-platform
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: loan-prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--web.enable-lifecycle"
+      - "--web.enable-remote-write-receiver"
+      - "--storage.tsdb.retention.time=30d"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9091:9090"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/ready"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - loan-platform
+
+  grafana:
+    image: grafana/grafana:10.4.3
+    container_name: loan-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_FEATURE_TOGGLES_ENABLE: traceqlEditor traceQLStreaming metricsSummary
+      GF_INSTALL_PLUGINS: grafana-piechart-panel,grafana-worldmap-panel
+    volumes:
+      - ./observability/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - ../../infra/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3100:3000"
+    depends_on:
+      - loki
+      - tempo
+      - prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - loan-platform
+
+  # ============================================================
+  # APPLICATION SERVICES
+  # ============================================================
+
+  api-gateway:
+    build:
+      context: ../..
+      dockerfile: services/api-gateway/Dockerfile
+    container_name: loan-api-gateway
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://loanapp:loanapp_pass@postgres:5432/loandb
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:29092
+      TEMPORAL_ADDRESS: temporal:7233
+      OPA_URL: http://opa:8181
+      JWT_SECRET: change-me-super-secret-jwt-key-min-32-chars
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      WORKFLOW_SERVICE_URL: http://workflow-service:3001
+      POLICY_SERVICE_URL: http://policy-service:3002
+      AI_SERVICE_URL: http://ai-execution-service:3003
+      AUDIT_SERVICE_URL: http://audit-service:3004
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      temporal:
+        condition: service_healthy
+    networks:
+      - loan-platform
+
+  workflow-service:
+    build:
+      context: ../..
+      dockerfile: services/workflow-service/Dockerfile
+    container_name: loan-workflow-service
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://loanapp:loanapp_pass@postgres:5432/loandb
+      KAFKA_BROKERS: kafka:29092
+      TEMPORAL_ADDRESS: temporal:7233
+      REDIS_URL: redis://redis:6379
+      OPA_URL: http://opa:8181
+      AI_SERVICE_URL: http://ai-execution-service:3003
+      AUDIT_SERVICE_URL: http://audit-service:3004
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      temporal:
+        condition: service_healthy
+    networks:
+      - loan-platform
+
+  policy-service:
+    build:
+      context: ../..
+      dockerfile: services/policy-service/Dockerfile
+    container_name: loan-policy-service
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DATABASE_URL: postgresql://loanapp:loanapp_pass@postgres:5432/loandb
+      OPA_URL: http://opa:8181
+      KAFKA_BROKERS: kafka:29092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      opa:
+        condition: service_healthy
+    networks:
+      - loan-platform
+
+  ai-execution-service:
+    build:
+      context: ../..
+      dockerfile: services/ai-execution-service/Dockerfile
+    container_name: loan-ai-service
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      DATABASE_URL: postgresql://loanapp:loanapp_pass@postgres:5432/loandb
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-mock}
+      AI_MOCK_MODE: "true"
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      KAFKA_BROKERS: kafka:29092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - loan-platform
+
+  audit-service:
+    build:
+      context: ../..
+      dockerfile: services/audit-service/Dockerfile
+    container_name: loan-audit-service
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3004
+      DATABASE_URL: postgresql://loanapp:loanapp_pass@postgres:5432/loandb
+      KAFKA_BROKERS: kafka:29092
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    ports:
+      - "3004:3004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - loan-platform
+
+  event-consumer:
+    build:
+      context: ../..
+      dockerfile: services/event-consumer/Dockerfile
+    container_name: loan-event-consumer
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      DATABASE_URL: postgresql://loanapp:loanapp_pass@postgres:5432/loandb
+      KAFKA_BROKERS: kafka:29092
+      REDIS_URL: redis://redis:6379
+      AUDIT_SERVICE_URL: http://audit-service:3004
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - loan-platform
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    container_name: loan-frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+      NEXT_PUBLIC_TEMPORAL_UI_URL: http://localhost:8088
+      NEXT_PUBLIC_GRAFANA_URL: http://localhost:3100
+    ports:
+      - "3006:3000"
+    depends_on:
+      - api-gateway
+    networks:
+      - loan-platform

@@ -1,0 +1,11 @@
+apiVersion: 1
+providers:
+  - name: loan-platform
+    orgId: 1
+    folder: AI Loan Governance
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

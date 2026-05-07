@@ -1,0 +1,96 @@
+version: '3.9'
+# ================================================================
+# Dev-only override: runs services with tsx hot-reload via bind mounts
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+# ================================================================
+
+services:
+  api-gateway:
+    build:
+      context: ../..
+      dockerfile: services/api-gateway/Dockerfile
+      target: deps          # stop at deps stage — use host src
+    command: ["npx", "tsx", "watch", "services/api-gateway/src/server.ts"]
+    volumes:
+      - ../../services/api-gateway/src:/app/services/api-gateway/src:ro
+      - ../../packages:/app/packages:ro
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+
+  workflow-service:
+    build:
+      context: ../..
+      dockerfile: services/workflow-service/Dockerfile
+      target: deps
+    command: sh -c "npx tsx services/workflow-service/src/worker.ts & npx tsx services/workflow-service/src/api.ts"
+    volumes:
+      - ../../services/workflow-service/src:/app/services/workflow-service/src:ro
+      - ../../packages:/app/packages:ro
+    environment:
+      NODE_ENV: development
+
+  policy-service:
+    build:
+      context: ../..
+      dockerfile: services/policy-service/Dockerfile
+      target: deps
+    command: ["npx", "tsx", "watch", "services/policy-service/src/server.ts"]
+    volumes:
+      - ../../services/policy-service/src:/app/services/policy-service/src:ro
+      - ../../packages:/app/packages:ro
+    environment:
+      NODE_ENV: development
+      PORT: "3002"
+
+  ai-execution-service:
+    build:
+      context: ../..
+      dockerfile: services/ai-execution-service/Dockerfile
+      target: deps
+    command: ["npx", "tsx", "watch", "services/ai-execution-service/src/server.ts"]
+    volumes:
+      - ../../services/ai-execution-service/src:/app/services/ai-execution-service/src:ro
+      - ../../packages:/app/packages:ro
+    environment:
+      NODE_ENV: development
+      PORT: "3003"
+      AI_MOCK_MODE: "true"
+
+  audit-service:
+    build:
+      context: ../..
+      dockerfile: services/audit-service/Dockerfile
+      target: deps
+    command: ["npx", "tsx", "watch", "services/audit-service/src/server.ts"]
+    volumes:
+      - ../../services/audit-service/src:/app/services/audit-service/src:ro
+      - ../../packages:/app/packages:ro
+    environment:
+      NODE_ENV: development
+      PORT: "3004"
+
+  event-consumer:
+    build:
+      context: ../..
+      dockerfile: services/event-consumer/Dockerfile
+      target: deps
+    command: ["npx", "tsx", "watch", "services/event-consumer/src/consumer.ts"]
+    volumes:
+      - ../../services/event-consumer/src:/app/services/event-consumer/src:ro
+      - ../../packages:/app/packages:ro
+    environment:
+      NODE_ENV: development
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+      target: deps
+    command: ["npx", "next", "dev", "-p", "3000"]
+    volumes:
+      - ../../frontend/src:/app/src:ro
+      - ../../frontend/public:/app/public:ro
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3000

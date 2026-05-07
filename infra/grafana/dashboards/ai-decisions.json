@@ -1,0 +1,65 @@
+{
+  "uid": "ai-decisions-dashboard",
+  "title": "AI Decision Analytics",
+  "tags": ["ai", "decisions", "risk"],
+  "refresh": "1m",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "piechart",
+      "title": "Decisions by Recommendation",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "sum by (recommendation) (increase(ai_decisions_total[24h]))"
+      }]
+    },
+    {
+      "id": 2,
+      "type": "piechart",
+      "title": "Decisions by Risk Level",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "sum by (risk_level) (increase(ai_decisions_total[24h]))"
+      }]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "AI Decision Latency (ms)",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "targets": [
+        { "datasource": "Prometheus", "expr": "histogram_quantile(0.50, rate(ai_decision_latency_ms_bucket[5m]))", "legendFormat": "p50" },
+        { "datasource": "Prometheus", "expr": "histogram_quantile(0.95, rate(ai_decision_latency_ms_bucket[5m]))", "legendFormat": "p95" },
+        { "datasource": "Prometheus", "expr": "histogram_quantile(0.99, rate(ai_decision_latency_ms_bucket[5m]))", "legendFormat": "p99" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Risk Score Heatmap Over Time",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "targets": [
+        { "datasource": "Prometheus", "expr": "histogram_quantile(0.25, rate(ai_risk_score_bucket[10m]))", "legendFormat": "p25" },
+        { "datasource": "Prometheus", "expr": "histogram_quantile(0.50, rate(ai_risk_score_bucket[10m]))", "legendFormat": "p50" },
+        { "datasource": "Prometheus", "expr": "histogram_quantile(0.75, rate(ai_risk_score_bucket[10m]))", "legendFormat": "p75" },
+        { "datasource": "Prometheus", "expr": "histogram_quantile(0.95, rate(ai_risk_score_bucket[10m]))", "legendFormat": "p95" }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "traces",
+      "title": "AI Decision Traces",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 16 },
+      "targets": [{
+        "datasource": "Tempo",
+        "queryType": "traceql",
+        "query": "{.service.name=\"ai-execution-service\"} | duration > 1s"
+      }]
+    }
+  ],
+  "schemaVersion": 38
+}

@@ -1,0 +1,144 @@
+{
+  "uid": "loan-platform-overview",
+  "title": "AI Loan Governance — Platform Overview",
+  "description": "Real-time overview of loan applications, AI decisions, policy evaluations, and workflow health",
+  "tags": ["loan-platform", "governance", "ai"],
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Total Loan Requests",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "sum(increase(loan_requests_total[24h]))",
+        "legendFormat": "24h Total"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 100}, {"color": "red", "value": 500}] }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "AI Decisions (24h)",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "sum(increase(ai_decisions_total[24h]))"
+      }],
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "blue" } } }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Policy Violations (1h)",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "sum(increase(policy_violations_total[1h]))"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 5}, {"color": "red", "value": 20}] }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Avg AI Decision Latency",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "histogram_quantile(0.95, rate(ai_decision_latency_ms_bucket[5m]))",
+        "legendFormat": "p95 ms"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": { "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 2000}, {"color": "red", "value": 5000}] }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Human Approvals Pending",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "sum(human_approvals_requested_total) - sum(human_approvals_completed_total)"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": { "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 10}, {"color": "red", "value": 50}] }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Loan Requests Rate",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "rate(loan_requests_total[5m])",
+        "legendFormat": "{{loan_type}}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Workflow Duration Distribution",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        { "datasource": "Prometheus", "expr": "histogram_quantile(0.50, rate(workflow_duration_ms_bucket[5m]))", "legendFormat": "p50" },
+        { "datasource": "Prometheus", "expr": "histogram_quantile(0.95, rate(workflow_duration_ms_bucket[5m]))", "legendFormat": "p95" },
+        { "datasource": "Prometheus", "expr": "histogram_quantile(0.99, rate(workflow_duration_ms_bucket[5m]))", "legendFormat": "p99" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "AI Risk Score Distribution",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        { "datasource": "Prometheus", "expr": "histogram_quantile(0.50, rate(ai_risk_score_bucket[5m]))", "legendFormat": "median" },
+        { "datasource": "Prometheus", "expr": "histogram_quantile(0.90, rate(ai_risk_score_bucket[5m]))", "legendFormat": "p90" }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Kafka Message Throughput",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        { "datasource": "Prometheus", "expr": "rate(kafka_messages_published_total[5m])", "legendFormat": "Published — {{topic}}" },
+        { "datasource": "Prometheus", "expr": "rate(kafka_messages_consumed_total[5m])", "legendFormat": "Consumed — {{topic}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "mps" } }
+    },
+    {
+      "id": 10,
+      "type": "logs",
+      "title": "Service Logs",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 20 },
+      "targets": [{
+        "datasource": "Loki",
+        "expr": "{job=~\"loan-platform.*\"} | json | level != \"DEBUG\"",
+        "legendFormat": ""
+      }],
+      "options": { "showTime": true, "showLabels": true, "wrapLogMessage": false, "prettifyLogMessage": true }
+    }
+  ],
+  "schemaVersion": 38
+}
