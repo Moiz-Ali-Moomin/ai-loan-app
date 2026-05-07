@@ -1,6 +1,6 @@
 import { trace, context, propagation, SpanStatusCode, SpanKind } from '@opentelemetry/api';
 import type { Span, Context, Attributes } from '@opentelemetry/api';
-import type { SpanOptions } from './types';
+import type { SpanOptions } from './types.js';
 
 export function createSpan(tracerName: string, options: SpanOptions): Span {
   const tracer = trace.getTracer(tracerName);

@@ -12,7 +12,6 @@ type MessageHandler<T = unknown> = (
 export class KafkaConsumerClient {
   private consumer: Consumer;
   private handlers = new Map<string, MessageHandler>();
-  private running = false;
 
   constructor(kafka: Kafka, groupId: string) {
     this.consumer = kafka.consumer({
@@ -30,7 +29,6 @@ export class KafkaConsumerClient {
   }
 
   async disconnect(): Promise<void> {
-    this.running = false;
     await this.consumer.disconnect();
   }
 
@@ -45,7 +43,6 @@ export class KafkaConsumerClient {
   }
 
   async startConsuming(): Promise<void> {
-    this.running = true;
     await this.consumer.run({
       eachMessage: async (payload) => {
         const { topic, partition, message } = payload;

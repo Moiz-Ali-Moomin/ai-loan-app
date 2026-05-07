@@ -1,6 +1,7 @@
 {
   "name": "@loan-platform/api-gateway",
   "version": "1.0.0",
+  "type": "module",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
@@ -30,11 +31,11 @@
     "@loan-platform/logger": "^1.0.0",
     "@loan-platform/database": "^1.0.0",
     "@loan-platform/kafka": "^1.0.0",
-    "@opentelemetry/api": "^1.8.0"
+    "@opentelemetry/api": "1.9.0"
   },
   "devDependencies": {
     "typescript": "^5.4.5",
-    "@types/node": "^20.12.12",
+    "@types/node": "^22.0.0",
     "tsx": "^4.11.2"
   }
 }

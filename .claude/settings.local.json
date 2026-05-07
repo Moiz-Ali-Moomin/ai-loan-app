@@ -11,7 +11,9 @@
       "Bash(Select-Object Name, PSIsContainer)",
       "PowerShell(Get-PSDrive C | Select-Object Used,Free,@{N='UsedGB';E={[math]::Round\\($_.Used/1GB,2\\)}},@{N='FreeGB';E={[math]::Round\\($_.Free/1GB,2\\)}})",
       "PowerShell(Get-WmiObject Win32_LogicalDisk -Filter \"DeviceID='C:'\" | Select-Object Size,FreeSpace,@{N='SizeGB';E={[math]::Round\\($_.Size/1GB,1\\)}},@{N='FreeGB';E={[math]::Round\\($_.FreeSpace/1GB,1\\)}})",
-      "Bash(wmic logicaldisk *)"
+      "Bash(wmic logicaldisk *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\\\\packages\" -Directory)",
+      "Bash(Select-Object -ExpandProperty Name)"
     ]
   }
 }

@@ -1,4 +1,4 @@
-import type { TelemetryConfig } from './types';
+import type { TelemetryConfig } from './types.js';
 
 export function getTelemetryConfig(serviceName: string): TelemetryConfig {
   return {
