@@ -1,2 +1,2 @@
-export { createPool, getPool } from './pool';
-export type { DatabasePool } from './pool';
+export { createPool, getPool } from './pool.js';
+export type { DatabasePool } from './pool.js';

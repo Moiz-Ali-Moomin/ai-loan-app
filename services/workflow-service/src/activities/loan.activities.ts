@@ -77,6 +77,7 @@ export function createLoanActivities(
           `${serviceUrls.policy}/api/v1/policies/evaluate`,
           {
             policyPath: 'loan/approval',
+            loanRequestId,
             tenantId,
             input: {
               loan: {

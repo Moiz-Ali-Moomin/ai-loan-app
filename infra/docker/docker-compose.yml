@@ -219,7 +219,7 @@ services:
     ports:
       - "7233:7233"
     healthcheck:
-      test: ["CMD", "tctl", "--address", "temporal:7233", "cluster", "health"]
+      test: ["CMD-SHELL", "nc -z localhost 7233 && echo healthy"]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -435,6 +435,7 @@ services:
       TEMPORAL_ADDRESS: temporal:7233
       REDIS_URL: redis://redis:6379
       OPA_URL: http://opa:8181
+      POLICY_SERVICE_URL: http://policy-service:3002
       AI_SERVICE_URL: http://ai-execution-service:3003
       AUDIT_SERVICE_URL: http://audit-service:3004
       MINIO_ENDPOINT: minio
@@ -442,6 +443,8 @@ services:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    ports:
+      - "3001:3001"
     depends_on:
       postgres:
         condition: service_healthy

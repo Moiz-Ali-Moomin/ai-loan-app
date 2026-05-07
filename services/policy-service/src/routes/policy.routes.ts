@@ -11,6 +11,7 @@ const logger = createLogger('policy-service:routes');
 
 const EvaluateSchema = z.object({
   policyPath: z.string().min(1),
+  loanRequestId: z.string().uuid().optional(),
   input: z.object({
     loan: z.object({
       requestedAmount: z.number(),
@@ -45,27 +46,29 @@ export default async function policyRoutes(fastify: FastifyInstance) {
 
       const result = await evaluateOpaPolicy(body.policyPath, body.input, traceId);
 
-      // Store evaluation record
+      // Store evaluation record — only if a valid loanRequestId was provided
       const pool = fastify.pg;
-      await pool.query(
-        `INSERT INTO policy_evaluations (id, loan_request_id, tenant_id, policy_path, policy_version, decision, allow, violations, flags, input_snapshot, evaluation_metadata, duration_ms)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-         ON CONFLICT DO NOTHING`,
-        [
-          result.id,
-          body.input.tenantId ?? randomUUID(),
-          body.tenantId ?? 'system',
-          body.policyPath,
-          result.policyVersion,
-          result.decision,
-          result.allow,
-          JSON.stringify(result.violations),
-          JSON.stringify(result.flags),
-          JSON.stringify(body.input),
-          JSON.stringify(result.metadata),
-          result.durationMs,
-        ]
-      );
+      if (body.loanRequestId) {
+        await pool.query(
+          `INSERT INTO policy_evaluations (id, loan_request_id, tenant_id, policy_path, policy_version, decision, allow, violations, flags, input_snapshot, evaluation_metadata, duration_ms)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+           ON CONFLICT DO NOTHING`,
+          [
+            result.id,
+            body.loanRequestId,
+            body.tenantId ?? 'system',
+            body.policyPath,
+            result.policyVersion,
+            result.decision,
+            result.allow,
+            JSON.stringify(result.violations),
+            JSON.stringify(result.flags),
+            JSON.stringify(body.input),
+            JSON.stringify(result.metadata),
+            result.durationMs,
+          ]
+        );
+      }
 
       // Publish policy event
       const producer = fastify.kafkaProducer as KafkaProducerClient;

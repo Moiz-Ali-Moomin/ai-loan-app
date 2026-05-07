@@ -1,10 +1,14 @@
-import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { Worker, NativeConnection } from '@temporalio/worker';
 import { Client as MinioClient } from 'minio';
 import { createPool } from '@loan-platform/database';
 import { createKafkaClient, KafkaProducerClient, ensureTopicsExist } from '@loan-platform/kafka';
 import { createLogger } from '@loan-platform/logger';
 import { createLoanActivities } from '../activities/loan.activities.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const logger = createLogger('workflow-service:worker');
 
@@ -68,7 +72,7 @@ async function run() {
     namespace: TEMPORAL_NAMESPACE,
     taskQueue: TEMPORAL_TASK_QUEUE,
     // Use __dirname-compatible path — works with CommonJS (tsconfig module: commonjs)
-    workflowsPath: path.join(__dirname, '..', 'workflows', 'loan-approval.workflow.js'),
+    workflowsPath: join(__dirname, '..', 'workflows', 'loan-approval.workflow.js'),
     activities,
     maxConcurrentActivityTaskExecutions: 20,
     maxConcurrentWorkflowTaskExecutions: 10,

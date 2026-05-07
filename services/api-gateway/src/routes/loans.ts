@@ -126,6 +126,22 @@ export default async function loanRoutes(fastify: FastifyInstance) {
           }],
         });
 
+        // Persist workflow run so worker activities can find it by temporal_workflow_id
+        await pool.query(
+          `INSERT INTO workflow_runs
+             (id, tenant_id, loan_request_id, temporal_workflow_id, temporal_run_id,
+              status, trace_id, correlation_id)
+           VALUES (uuid_generate_v4(), $1, $2, $3, $4, 'RUNNING', $5, $6)`,
+          [
+            body.tenantId,
+            loanRequestId,
+            handle.workflowId,
+            handle.firstExecutionRunId,
+            traceId,
+            correlationId,
+          ]
+        );
+
         // Publish event
         const producer = fastify.kafkaProducer as KafkaProducerClient;
         await producer.publish(

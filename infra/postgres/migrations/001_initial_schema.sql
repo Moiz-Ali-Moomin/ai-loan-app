@@ -326,6 +326,14 @@ CREATE TABLE audit_logs_2025_q4 PARTITION OF audit_logs
     FOR VALUES FROM ('2025-10-01') TO ('2026-01-01');
 CREATE TABLE audit_logs_2026_q1 PARTITION OF audit_logs
     FOR VALUES FROM ('2026-01-01') TO ('2026-07-01');
+CREATE TABLE audit_logs_2026_q3 PARTITION OF audit_logs
+    FOR VALUES FROM ('2026-07-01') TO ('2026-10-01');
+CREATE TABLE audit_logs_2026_q4 PARTITION OF audit_logs
+    FOR VALUES FROM ('2026-10-01') TO ('2027-01-01');
+CREATE TABLE audit_logs_2027_q1 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-01-01') TO ('2027-04-01');
+CREATE TABLE audit_logs_2027_q2 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-04-01') TO ('2027-07-01');
 CREATE TABLE audit_logs_default PARTITION OF audit_logs DEFAULT;
 
 CREATE INDEX idx_audit_logs_tenant_id ON audit_logs(tenant_id);

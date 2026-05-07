@@ -6,7 +6,12 @@
       "Bash([ ! -f \"services/$svc/tsconfig.json\" ])",
       "Bash([ ! -f \"services/$svc/src/instrumentation.ts\" ])",
       "Bash(node -e ' *)",
-      "Bash(node -e 'try{const d=require\\('\\\\''./__TRACKED_VAR__'\\\\''\\);console.log\\(d.type||'\\\\''none'\\\\''\\)}catch\\(e\\){console.log\\('\\\\''skip'\\\\''\\)}')"
+      "Bash(node -e 'try{const d=require\\('\\\\''./__TRACKED_VAR__'\\\\''\\);console.log\\(d.type||'\\\\''none'\\\\''\\)}catch\\(e\\){console.log\\('\\\\''skip'\\\\''\\)}')",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "PowerShell(Get-PSDrive C | Select-Object Used,Free,@{N='UsedGB';E={[math]::Round\\($_.Used/1GB,2\\)}},@{N='FreeGB';E={[math]::Round\\($_.Free/1GB,2\\)}})",
+      "PowerShell(Get-WmiObject Win32_LogicalDisk -Filter \"DeviceID='C:'\" | Select-Object Size,FreeSpace,@{N='SizeGB';E={[math]::Round\\($_.Size/1GB,1\\)}},@{N='FreeGB';E={[math]::Round\\($_.FreeSpace/1GB,1\\)}})",
+      "Bash(wmic logicaldisk *)"
     ]
   }
 }
