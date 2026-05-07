@@ -1,4 +1,4 @@
-import type { UUID, ISOTimestamp, TenantId } from './common';
+import type { UUID, ISOTimestamp, TenantId } from './common.js';
 
 export enum KafkaTopic {
   LOAN_REQUESTS = 'loan.requests',

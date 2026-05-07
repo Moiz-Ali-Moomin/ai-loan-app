@@ -12,8 +12,8 @@ import type {
   HumanApprovalSignal,
   WorkflowStep,
 } from '@loan-platform/shared-types';
-import { LoanStatus, WorkflowStatus } from '@loan-platform/shared-types';
-import type { LoanActivities } from '../activities/index.js';
+import { LoanStatus } from '@loan-platform/shared-types';
+import type { LoanActivities } from '../activities/index';
 
 // Activity proxies — all calls are durable, retried by Temporal
 const {
@@ -136,7 +136,7 @@ export async function loanApprovalWorkflow(
 
   // ── Step 5: Human Approval (if high risk or policy flag) ──────────────────
   const needsHumanApproval =
-    aiResult.riskScore > parseFloat(process.env['HIGH_RISK_THRESHOLD'] ?? '0.75') ||
+    aiResult.riskScore > 0.75 ||
     policyResult.flags?.some((f: { requiresAction: string }) => f.requiresAction === 'MANUAL_REVIEW') ||
     aiResult.recommendation === 'MANUAL_REVIEW';
 
@@ -157,7 +157,7 @@ export async function loanApprovalWorkflow(
     });
 
     // Wait up to 24 hours for human decision
-    const timeoutMs = parseInt(process.env['HUMAN_APPROVAL_TIMEOUT'] ?? '86400', 10) * 1000;
+    const timeoutMs = 86400 * 1000; // 24h — configure via workflow input if needed
     const approved = await condition(() => humanApprovalReceived, timeoutMs);
 
     if (!approved || !humanApprovalDecision) {

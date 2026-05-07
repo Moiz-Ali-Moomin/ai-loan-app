@@ -103,11 +103,11 @@ export class AuditRepository {
       [loanRequestId]
     );
 
-    const timeline = (auditRows.rows as AuditRecord[]).map((r) => ({
-      timestamp: r.createdAt,
-      event: r.eventType,
-      actor: r.actorType,
-      details: r.serviceName,
+    const timeline = (auditRows.rows as (AuditRecord & Record<string, unknown>)[]).map((r) => ({
+      timestamp: (r['created_at'] ?? r.createdAt) as string,
+      event: (r['event_type'] ?? r.eventType) as string,
+      actor: (r['actor_type'] ?? r.actorType) as string,
+      details: (r['service_name'] ?? r.serviceName) as string,
     }));
 
     return {

@@ -1,5 +1,5 @@
-import type { UUID, ISOTimestamp, TenantId } from './common';
-import type { LoanStatus } from './loan';
+import type { UUID, ISOTimestamp, TenantId } from './common.js';
+import type { LoanStatus } from './loan.js';
 
 export enum WorkflowStatus {
   RUNNING = 'RUNNING',

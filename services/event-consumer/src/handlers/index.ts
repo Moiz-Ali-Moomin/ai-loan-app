@@ -12,7 +12,7 @@ const logger = createLogger('event-consumer:handlers');
 
 const AUDIT_SERVICE_URL = process.env['AUDIT_SERVICE_URL'] ?? 'http://localhost:3004';
 
-export function createEventHandlers(pool: Pool, redis: Redis) {
+export function createEventHandlers(_pool: Pool, redis: Redis) {
   const loanRequestsCounter = LoanPlatformMetrics.loanRequestsTotal();
   const aiDecisionsCounter = LoanPlatformMetrics.aiDecisionsTotal();
   const policyViolationsCounter = LoanPlatformMetrics.policyViolationsTotal();

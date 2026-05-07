@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "verbatimModuleSyntax": false,
+    "outDir": "dist/workflows",
+    "rootDir": "src/workflows",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src/workflows"]
+}

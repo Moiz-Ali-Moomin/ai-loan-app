@@ -77,7 +77,7 @@ export default async function policyRoutes(fastify: FastifyInstance) {
         'POLICY_EVALUATED',
         {
           evaluationId: result.id,
-          loanRequestId: body.input.tenantId,
+          loanRequestId: body.loanRequestId ?? '',
           tenantId: body.tenantId ?? 'system',
           policyPath: body.policyPath,
           policyVersion: result.policyVersion,

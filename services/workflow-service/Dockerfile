@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
 
@@ -32,6 +32,7 @@ COPY --from=builder --chown=nodeapp:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodeapp:nodejs /app/packages ./packages
 COPY --from=builder --chown=nodeapp:nodejs /app/services/workflow-service/dist ./services/workflow-service/dist
 USER nodeapp
+COPY --from=builder --chown=nodeapp:nodejs /app/services/workflow-service/package.json ./services/workflow-service/
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD node -e "process.exit(0)"
+  CMD wget --quiet --tries=1 --spider http://localhost:3001/health || exit 1
 CMD ["node", "services/workflow-service/dist/workers/worker.js"]

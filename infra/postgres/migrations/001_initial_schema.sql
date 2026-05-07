@@ -231,7 +231,7 @@ CREATE INDEX idx_fraud_analyses_is_suspicious ON fraud_analyses(is_suspicious);
 CREATE TABLE loan_decisions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     loan_request_id UUID NOT NULL REFERENCES loan_requests(id),
-    workflow_run_id UUID NOT NULL REFERENCES workflow_runs(id),
+    workflow_run_id UUID REFERENCES workflow_runs(id),
     tenant_id UUID NOT NULL REFERENCES tenants(id),
     status VARCHAR(50) NOT NULL,
     approved_amount NUMERIC(15, 2),
@@ -258,7 +258,7 @@ CREATE INDEX idx_loan_decisions_decided_at ON loan_decisions(decided_at DESC);
 CREATE TABLE approval_records (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     loan_request_id UUID NOT NULL REFERENCES loan_requests(id),
-    workflow_run_id UUID NOT NULL REFERENCES workflow_runs(id),
+    workflow_run_id UUID REFERENCES workflow_runs(id),
     tenant_id UUID NOT NULL REFERENCES tenants(id),
     reviewer_id UUID REFERENCES users(id),
     reason TEXT NOT NULL,

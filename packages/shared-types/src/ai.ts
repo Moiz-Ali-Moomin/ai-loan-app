@@ -1,4 +1,4 @@
-import type { UUID, ISOTimestamp } from './common';
+import type { UUID, ISOTimestamp } from './common.js';
 
 export enum RiskLevel {
   LOW = 'LOW',
