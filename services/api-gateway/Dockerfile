@@ -37,5 +37,5 @@ COPY --from=builder --chown=nodeapp:nodejs /app/services/api-gateway/package.jso
 USER nodeapp
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost:3000/health || exit 1
+  CMD node -e "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
 CMD ["node", "services/api-gateway/dist/server.js"]
