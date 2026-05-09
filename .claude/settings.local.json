@@ -40,7 +40,9 @@
       "WebFetch(domain:typescript.temporal.io)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:api-docs.temporal.io)",
-      "WebFetch(domain:buf.build)"
+      "WebFetch(domain:buf.build)",
+      "Bash(docker exec *)",
+      "Bash(docker manifest *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Haxor\\.claude\\projects\\c--Users-Haxor-Desktop-AI-Loan-App\\memory"
