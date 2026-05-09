@@ -15,6 +15,8 @@ COPY services/workflow-service/package.json ./services/workflow-service/
 RUN npm install --workspaces --include-workspace-root
 
 FROM base AS builder
+COPY package.json ./
+COPY turbo.json ./
 COPY --from=deps /app/node_modules ./node_modules
 COPY tsconfig.base.json ./
 COPY packages ./packages

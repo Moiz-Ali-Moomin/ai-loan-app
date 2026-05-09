@@ -1,6 +1,5 @@
-FROM node:22-alpine AS base
+FROM node:20-bookworm-slim AS base
 WORKDIR /app
-RUN apk add --no-cache libc6-compat
 
 FROM base AS deps
 COPY package.json turbo.json ./
@@ -13,6 +12,8 @@ COPY services/event-consumer/package.json ./services/event-consumer/
 RUN npm install --workspaces --include-workspace-root
 
 FROM base AS builder
+COPY package.json ./
+COPY turbo.json ./
 COPY --from=deps /app/node_modules ./node_modules
 COPY tsconfig.base.json ./
 COPY packages ./packages
@@ -22,7 +23,7 @@ RUN npm run build -w packages/shared-types && npm run build -w packages/telemetr
 FROM base AS runner
 ENV NODE_ENV=production
 WORKDIR /app
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nodeapp
+RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs nodeapp
 COPY --from=builder --chown=nodeapp:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodeapp:nodejs /app/packages ./packages
 COPY --from=builder --chown=nodeapp:nodejs /app/services/event-consumer/dist ./services/event-consumer/dist
