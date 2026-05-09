@@ -42,7 +42,15 @@
       "WebFetch(domain:api-docs.temporal.io)",
       "WebFetch(domain:buf.build)",
       "Bash(docker exec *)",
-      "Bash(docker manifest *)"
+      "Bash(docker manifest *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\\\\frontend\\\\src\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)",
+      "PowerShell(Get-Process -Name \"dockerd\", \"docker\", \"Docker Desktop\" -ErrorAction SilentlyContinue)",
+      "Bash(find / -maxdepth 6 -name \"docker-compose.yml\" 2>/dev/null | head -10)",
+      "Read(//c//**)",
+      "Bash(ls / 2>/dev/null | head -20 && echo \"---\" && pwd)",
+      "Bash(echo \"exit:$?\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\Haxor\\.claude\\projects\\c--Users-Haxor-Desktop-AI-Loan-App\\memory"
