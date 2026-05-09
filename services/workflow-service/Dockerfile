@@ -1,6 +1,8 @@
-FROM node:22-alpine AS base
+FROM node:20-bookworm-slim AS base
 WORKDIR /app
-RUN apk add --no-cache libc6-compat
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
 
 FROM base AS deps
 COPY package.json turbo.json ./
@@ -24,15 +26,15 @@ RUN npm run build -w packages/shared-types && \
     npm run build -w packages/kafka && \
     npm run build -w services/workflow-service
 
-FROM base AS runner
+FROM node:20-bookworm-slim AS runner
 ENV NODE_ENV=production
 WORKDIR /app
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nodeapp
+RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs nodeapp
 COPY --from=builder --chown=nodeapp:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodeapp:nodejs /app/packages ./packages
 COPY --from=builder --chown=nodeapp:nodejs /app/services/workflow-service/dist ./services/workflow-service/dist
-USER nodeapp
 COPY --from=builder --chown=nodeapp:nodejs /app/services/workflow-service/package.json ./services/workflow-service/
+USER nodeapp
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost:3001/health || exit 1
