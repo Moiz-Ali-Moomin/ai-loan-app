@@ -1,5 +1,3 @@
-version: '3.9'
-
 # =============================================================
 # AI Loan Governance Platform — Local Development Stack
 # =============================================================
@@ -212,7 +210,6 @@ services:
       POSTGRES_USER: temporal
       POSTGRES_PWD: temporal
       POSTGRES_SEEDS: temporal-postgres
-      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
       ENABLE_ES: "false"
       TEMPORAL_BROADCAST_ADDRESS: "0.0.0.0"
       TEMPORAL_CORS_ORIGINS: "http://localhost:3000"
