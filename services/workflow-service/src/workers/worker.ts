@@ -1,6 +1,7 @@
 import '../instrumentation.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { Long } from 'long';
 import { Worker, NativeConnection } from '@temporalio/worker';
 import { Client as MinioClient } from 'minio';
 import { createPool } from '@loan-platform/database';
@@ -23,7 +24,7 @@ async function ensureNamespace(address: string, namespace: string): Promise<void
     const conn = await Connection.connect({ address });
     const client = new Client({ connection: conn, namespace: 'default' });
     try {
-      await client.workflowService.registerNamespace({ namespace, workflowExecutionRetentionPeriod: { seconds: 604800 } });
+      await client.workflowService.registerNamespace({ namespace, workflowExecutionRetentionPeriod: { seconds: Long.fromNumber(604800) } });
       logger.info(`Temporal namespace '${namespace}' registered`);
     } catch (err: unknown) {
       // NamespaceAlreadyExists is expected on subsequent starts

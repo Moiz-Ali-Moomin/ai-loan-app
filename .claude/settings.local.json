@@ -34,7 +34,13 @@
       "Skill(session-clean)",
       "Bash(npm install *)",
       "Bash(npm run *)",
-      "Bash(Select-String -Pattern \"bigint|BigInt|unknown.*loanRequestId|loanRequestId.*unknown\")"
+      "Bash(Select-String -Pattern \"bigint|BigInt|unknown.*loanRequestId|loanRequestId.*unknown\")",
+      "WebSearch",
+      "WebFetch(domain:docs.temporal.io)",
+      "WebFetch(domain:typescript.temporal.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api-docs.temporal.io)",
+      "WebFetch(domain:buf.build)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Haxor\\.claude\\projects\\c--Users-Haxor-Desktop-AI-Loan-App\\memory"
