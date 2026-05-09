@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FileText, ShieldCheck, Brain, Activity, BookOpen, Settings } from 'lucide-react';
+import { LayoutDashboard, FileText, ShieldCheck, Brain, Activity, BookOpen, Scale } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const nav = [
@@ -11,6 +11,7 @@ const nav = [
   { href: '/dashboard/ai-decisions', label: 'AI Decisions', icon: Brain },
   { href: '/dashboard/audit', label: 'Audit Trail', icon: BookOpen },
   { href: '/dashboard/observability', label: 'Observability', icon: Activity },
+  { href: '/dashboard/policies', label: 'Policies', icon: Scale },
 ];
 
 export function Sidebar() {

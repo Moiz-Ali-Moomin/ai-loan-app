@@ -5,7 +5,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import Link from 'next/link';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, ScatterChart, Scatter, ZAxis,
+  ResponsiveContainer, ScatterChart, Scatter, ZAxis, Cell,
 } from 'recharts';
 
 interface AIDecision {
@@ -108,7 +108,7 @@ export default function AIDecisionsPage() {
               <Tooltip />
               <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                 {byRiskLevel.map((entry) => (
-                  <rect key={entry.level} fill={entry.color} />
+                  <Cell key={entry.level} fill={entry.color} />
                 ))}
               </Bar>
             </BarChart>

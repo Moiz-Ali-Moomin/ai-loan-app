@@ -50,7 +50,10 @@
       "Bash(find / -maxdepth 6 -name \"docker-compose.yml\" 2>/dev/null | head -10)",
       "Read(//c//**)",
       "Bash(ls / 2>/dev/null | head -20 && echo \"---\" && pwd)",
-      "Bash(echo \"exit:$?\")"
+      "Bash(echo \"exit:$?\")",
+      "Bash(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\\\\frontend\\\\src\\\\app\\\\\\(dashboard\\)\\\\dashboard\\\\policies\")",
+      "Bash(Out-Null)",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\\\\frontend\\\\src\\\\app\\\\\\(dashboard\\)\\\\dashboard\\\\policies\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\Haxor\\.claude\\projects\\c--Users-Haxor-Desktop-AI-Loan-App\\memory"
