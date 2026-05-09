@@ -112,7 +112,7 @@ export class AuditRepository {
 
     return {
       loanRequestId,
-      workflowRunId: wfRows.rows[0]?.id ?? '',
+      workflowRunId: (wfRows[0] as Record<string, unknown> | undefined)?.['id'] as string ?? '',
       events: auditRows.rows as AuditRecord[],
       policyVersions: policyRows.rows.map((r: Record<string, unknown>) => ({
         policyName: String(r['policy_path']),

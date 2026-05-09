@@ -13,7 +13,7 @@ import type {
   WorkflowStep,
 } from '@loan-platform/shared-types';
 import { LoanStatus } from '@loan-platform/shared-types';
-import type { LoanActivities } from '../activities/index';
+import type { LoanActivities } from '../activities/index.js';
 
 // Activity proxies — all calls are durable, retried by Temporal
 const {
@@ -167,13 +167,14 @@ export async function loanApprovalWorkflow(
       return buildOutput(loanRequestId, LoanStatus.ESCALATED, true, workflowId);
     }
 
-    await storeAuditRecord({ ...ctx, eventType: 'HUMAN_APPROVAL_RECEIVED', payload: { decision: humanApprovalDecision.decision, reviewerId: humanApprovalDecision.reviewerId } });
+    const approval = humanApprovalDecision as HumanApprovalSignal;
+    await storeAuditRecord({ ...ctx, eventType: 'HUMAN_APPROVAL_RECEIVED', payload: { decision: approval.decision, reviewerId: approval.reviewerId } });
     await updateWorkflowStep({ ...ctx, step: 'HUMAN_APPROVAL' as WorkflowStep, status: 'COMPLETED' });
 
-    const humanDecision = humanApprovalDecision.decision === 'APPROVE' ? LoanStatus.APPROVED : LoanStatus.REJECTED;
-    await finalizeDecision({ ...ctx, decision: humanDecision, reason: humanApprovalDecision.reviewerNotes, decidedBy: 'HUMAN', reviewerId: humanApprovalDecision.reviewerId });
+    const humanDecision = approval.decision === 'APPROVE' ? LoanStatus.APPROVED : LoanStatus.REJECTED;
+    await finalizeDecision({ ...ctx, decision: humanDecision, reason: approval.reviewerNotes, decidedBy: 'HUMAN', reviewerId: approval.reviewerId });
 
-    await storeAuditRecord({ ...ctx, eventType: humanDecision === LoanStatus.APPROVED ? 'LOAN_APPROVED' : 'LOAN_REJECTED', payload: { decidedBy: 'HUMAN', reviewerId: humanApprovalDecision.reviewerId } });
+    await storeAuditRecord({ ...ctx, eventType: humanDecision === LoanStatus.APPROVED ? 'LOAN_APPROVED' : 'LOAN_REJECTED', payload: { decidedBy: 'HUMAN', reviewerId: approval.reviewerId } });
     await publishWorkflowEvent({ ...ctx, step: 'FINALIZE_DECISION', eventType: 'WORKFLOW_COMPLETED', details: { decision: humanDecision } });
 
     return buildOutput(loanRequestId, humanDecision, true, workflowId);

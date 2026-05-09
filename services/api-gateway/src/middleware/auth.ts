@@ -10,19 +10,12 @@ export interface JwtPayload {
   exp: number;
 }
 
-declare module 'fastify' {
-  interface FastifyRequest {
-    user?: JwtPayload;
-  }
-}
-
 export async function requireAuth(
   request: FastifyRequest,
   reply: FastifyReply
 ): Promise<void> {
   try {
     await request.jwtVerify();
-    request.user = request.user as JwtPayload;
   } catch {
     await reply.status(401).send({
       success: false,

@@ -72,8 +72,8 @@ async function run() {
     connection,
     namespace: TEMPORAL_NAMESPACE,
     taskQueue: TEMPORAL_TASK_QUEUE,
-    // Use __dirname-compatible path — works with CommonJS (tsconfig module: commonjs)
-    workflowsPath: join(__dirname, '..', 'workflows', 'loan-approval.workflow.js'),
+    // dist/workers/worker.js → go up two levels to dist/, then into workflows/
+    workflowsPath: join(__dirname, '..', '..', 'workflows', 'loan-approval.workflow.js'),
     activities,
     maxConcurrentActivityTaskExecutions: 20,
     maxConcurrentWorkflowTaskExecutions: 10,

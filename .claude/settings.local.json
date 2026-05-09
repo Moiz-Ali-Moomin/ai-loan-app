@@ -17,7 +17,22 @@
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\" -Force)",
       "Read(//c/Users/Haxor/.claude/projects/c--Users-Haxor-Desktop-AI-Loan-App/memory/**)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\" -Recurse -Force)",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "PowerShell($dirs = Get-ChildItem \"C:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\" -Recurse -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq \"node_modules\" -or $_.Name -eq \"dist\" } | Select-Object FullName; $dirs | Format-Table -AutoSize)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Haxor\" -ErrorAction SilentlyContinue | Select-Object Name, @{N='SizeGB';E={[math]::Round\\(\\(Get-ChildItem $_.FullName -Recurse -ErrorAction SilentlyContinue | Measure-Object Length -Sum\\).Sum/1GB, 2\\)}} | Sort-Object SizeGB -Descending | Select-Object -First 10)",
+      "PowerShell(npm cache clean --force 2>&1; $drive = Get-PSDrive C; Write-Output \"Free after clean: $\\([math]::Round\\($drive.Free/1GB,2\\)\\) GB\")",
+      "Bash(npx tsc *)",
+      "Bash(node_modules/.bin/tsc -p services/policy-service/tsconfig.json --noEmit)",
+      "Bash(node_modules/.bin/tsc -p services/audit-service/tsconfig.json --noEmit)",
+      "Bash(node_modules/.bin/tsc -p services/event-consumer/tsconfig.json --noEmit)",
+      "Bash(node_modules/.bin/tsc -p services/api-gateway/tsconfig.json --noEmit)",
+      "Bash(node_modules/.bin/tsc -p services/workflow-service/tsconfig.workflow.json --noEmit)",
+      "Bash(node_modules/.bin/tsc -p services/ai-execution-service/tsconfig.json --noEmit)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\" -Recurse -File)",
+      "Bash(Select-Object -Property FullName)",
+      "PowerShell(head *)",
+      "Skill(session-clean)",
+      "Bash(npm install *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Haxor\\.claude\\projects\\c--Users-Haxor-Desktop-AI-Loan-App\\memory"

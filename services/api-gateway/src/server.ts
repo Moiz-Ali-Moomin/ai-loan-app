@@ -64,7 +64,7 @@ async function buildServer() {
       success: false,
       error: {
         code: 'RATE_LIMIT_EXCEEDED',
-        message: `Rate limit exceeded. Try again in ${Math.ceil(context.after / 1000)}s`,
+        message: `Rate limit exceeded. Try again in ${Math.ceil(parseInt(String(context.after), 10) / 1000)}s`,
       },
     }),
   });

@@ -1,6 +1,6 @@
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { Resource } from '@opentelemetry/resources';
-import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
@@ -13,8 +13,8 @@ let sdk: NodeSDK | null = null;
 
 export function initTelemetry(config: TelemetryConfig): void {
   const resource = new Resource({
-    [ATTR_SERVICE_NAME]: config.serviceName,
-    [ATTR_SERVICE_VERSION]: config.serviceVersion,
+    [SemanticResourceAttributes.SERVICE_NAME]: config.serviceName,
+    [SemanticResourceAttributes.SERVICE_VERSION]: config.serviceVersion,
     'deployment.environment': config.environment,
   });
 

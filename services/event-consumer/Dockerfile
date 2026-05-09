@@ -26,6 +26,7 @@ RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nodeapp
 COPY --from=builder --chown=nodeapp:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodeapp:nodejs /app/packages ./packages
 COPY --from=builder --chown=nodeapp:nodejs /app/services/event-consumer/dist ./services/event-consumer/dist
+COPY --from=builder --chown=nodeapp:nodejs /app/services/event-consumer/package.json ./services/event-consumer/
 USER nodeapp
 EXPOSE 3005
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \

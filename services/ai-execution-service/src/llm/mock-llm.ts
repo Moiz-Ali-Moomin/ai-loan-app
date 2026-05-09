@@ -1,5 +1,5 @@
-import type { AIDecisionRequest, AIDecisionResult, RiskFactor, RiskLevel, SuggestedLoanTerms } from '@loan-platform/shared-types';
-import { randomUUID } from 'crypto';
+import type { AIDecisionRequest, RiskFactor, SuggestedLoanTerms } from '@loan-platform/shared-types';
+import { RiskLevel } from '@loan-platform/shared-types';
 import { createLogger } from '@loan-platform/logger';
 
 const logger = createLogger('ai-execution:mock-llm');
@@ -100,7 +100,7 @@ export async function mockLLMAnalyze(
     };
   }
 
-  const riskLevel: RiskLevel = riskScore > 0.75 ? 'CRITICAL' : riskScore > 0.55 ? 'HIGH' : riskScore > 0.35 ? 'MEDIUM' : 'LOW';
+  const riskLevel: RiskLevel = riskScore > 0.75 ? RiskLevel.CRITICAL : riskScore > 0.55 ? RiskLevel.HIGH : riskScore > 0.35 ? RiskLevel.MEDIUM : RiskLevel.LOW;
 
   const reasoning = generateReasoning(applicantProfile, loanDetails, riskScore, riskLevel, recommendation, riskFactors);
   const latencyMs = Date.now() - start;

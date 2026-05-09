@@ -1,6 +1,6 @@
 import './instrumentation.js';
 import Fastify from 'fastify';
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { createPool } from '@loan-platform/database';
 import { createKafkaClient, KafkaConsumerClient } from '@loan-platform/kafka';
 import { KafkaTopic } from '@loan-platform/shared-types';
@@ -15,11 +15,11 @@ async function main() {
   const pool = createPool();
 
   const redis = new Redis(process.env['REDIS_URL'] ?? 'redis://localhost:6379', {
-    retryStrategy: (times) => Math.min(times * 100, 3000),
+    retryStrategy: (times: number) => Math.min(times * 100, 3000),
     maxRetriesPerRequest: 3,
   });
 
-  redis.on('error', (err) => logger.error('Redis error', { err }));
+  redis.on('error', (err: Error) => logger.error('Redis error', { err }));
   redis.on('connect', () => logger.info('Redis connected'));
 
   const kafka = createKafkaClient('event-consumer');

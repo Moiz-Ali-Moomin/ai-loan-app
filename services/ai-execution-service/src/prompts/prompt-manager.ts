@@ -1,5 +1,4 @@
 import type { Client as MinioClient } from 'minio';
-import { randomUUID } from 'crypto';
 import { createLogger } from '@loan-platform/logger';
 
 const logger = createLogger('ai-execution:prompt-manager');
@@ -13,15 +12,15 @@ Analyze the following loan application and provide a structured risk assessment.
 
 # Applicant Profile
 - Credit Score: {{creditScore}}
-- Annual Income: ${{annualIncome}}
-- Existing Debt: ${{existingDebt}}
+- Annual Income: \${{annualIncome}}
+- Existing Debt: \${{existingDebt}}
 - Employment Status: {{employmentStatus}}
 - Age: {{age}}
 - KYC Verified: {{kycVerified}}
 
 # Loan Request
 - Type: {{loanType}}
-- Amount: ${{requestedAmount}}
+- Amount: \${{requestedAmount}}
 - Term: {{termMonths}} months
 - Purpose: {{purpose}}
 - Debt-to-Income Ratio: {{dtiRatio}}%
@@ -66,10 +65,12 @@ export class PromptManager {
   async storePrompt(version: string, content: string, loanRequestId: string): Promise<string> {
     const key = `${loanRequestId}/prompt-${version}-${Date.now()}.txt`;
     try {
+      const buf = Buffer.from(content);
       await this.minioClient.putObject(
         process.env['MINIO_BUCKET_PROMPTS'] ?? 'ai-prompts',
         key,
-        Buffer.from(content),
+        buf,
+        buf.length,
         { 'Content-Type': 'text/plain', 'X-Prompt-Version': version, 'X-Loan-Request-Id': loanRequestId }
       );
     } catch (err) {
@@ -81,10 +82,12 @@ export class PromptManager {
   async storeResponse(response: unknown, loanRequestId: string): Promise<string> {
     const key = `${loanRequestId}/response-${Date.now()}.json`;
     try {
+      const buf = Buffer.from(JSON.stringify(response, null, 2));
       await this.minioClient.putObject(
         process.env['MINIO_BUCKET_RESPONSES'] ?? 'ai-responses',
         key,
-        Buffer.from(JSON.stringify(response, null, 2)),
+        buf,
+        buf.length,
         { 'Content-Type': 'application/json', 'X-Loan-Request-Id': loanRequestId }
       );
     } catch (err) {

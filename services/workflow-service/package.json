@@ -4,9 +4,9 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.workflow.json",
-    "dev": "tsx watch src/worker.ts",
+    "dev": "tsx watch src/workers/worker.ts",
     "dev:api": "tsx watch src/api.ts",
-    "start": "node dist/worker.js",
+    "start": "node dist/workers/worker.js",
     "start:api": "node dist/api.js"
   },
   "dependencies": {

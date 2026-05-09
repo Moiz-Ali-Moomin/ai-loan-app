@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
+import { compare } from 'bcryptjs';
 import { createLogger } from '@loan-platform/logger';
 
 const logger = createLogger('api-gateway:auth');
@@ -34,7 +35,17 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
       const user = rows[0];
 
-      // In production: verify bcrypt hash. For demo, accept any password.
+      // Timing-safe bcrypt comparison — always compare even if hash is absent
+      // to prevent user enumeration via timing differences.
+      const passwordHash: string = user.password_hash ?? '';
+      const passwordValid = passwordHash.length > 0 && await compare(password, passwordHash);
+      if (!passwordValid) {
+        return reply.status(401).send({
+          success: false,
+          error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' },
+        });
+      }
+
       const token = fastify.jwt.sign({
         sub: user.id,
         tenantId: user.tenant_id,

@@ -19,11 +19,29 @@ interface ActivityContext {
   runId: string;
 }
 
+interface PolicyResult {
+  allow: boolean;
+  deny: boolean;
+  decision: string;
+  violations: Array<{ rule: string; message: string; severity: string; value?: unknown; threshold?: unknown }>;
+  flags: Array<{ rule: string; message: string; requiresAction: string }>;
+  [key: string]: unknown;
+}
+
+interface AIResult {
+  id: string;
+  riskScore: number;
+  recommendation: string;
+  reasoning: string;
+  suggestedTerms?: unknown;
+  [key: string]: unknown;
+}
+
 export interface LoanActivities {
   validateLoanRequest(input: { loanRequestId: string; tenantId: string }): Promise<{ valid: boolean; errors: string[] }>;
-  evaluatePolicy(input: { loanRequestId: string; tenantId: string; correlationId: string }): Promise<Record<string, unknown>>;
+  evaluatePolicy(input: { loanRequestId: string; tenantId: string; correlationId: string }): Promise<PolicyResult>;
   runFraudAnalysis(input: { loanRequestId: string; tenantId: string }): Promise<{ id: string; fraudScore: number; isSuspicious: boolean; flags: unknown[] }>;
-  runAIRiskAnalysis(input: { loanRequestId: string; tenantId: string; fraudScore: number; policyFlags: string[]; correlationId: string }): Promise<Record<string, unknown>>;
+  runAIRiskAnalysis(input: { loanRequestId: string; tenantId: string; fraudScore: number; policyFlags: string[]; correlationId: string }): Promise<AIResult>;
   requestHumanApproval(input: { loanRequestId: string; tenantId: string; workflowId: string; riskScore: number; aiRecommendation: string; policyFlags: string[] }): Promise<{ id: string }>;
   storeAuditRecord(input: ActivityContext & { eventType: string; payload: Record<string, unknown> }): Promise<void>;
   publishWorkflowEvent(input: ActivityContext & { step: string; eventType: string; details?: Record<string, unknown> }): Promise<void>;
@@ -240,9 +258,9 @@ export function createLoanActivities(
       return withSpan('workflow-service', 'activity:persistArtifacts', { loanRequestId: input.loanRequestId }, async () => {
         const bucket = input.artifactType === 'ai-decision' ? 'ai-responses' : 'workflow-snapshots';
         const key = `${input.tenantId}/${input.loanRequestId}/${input.artifactType}-${Date.now()}.json`;
-        const content = JSON.stringify({ ...input.data, _meta: { traceId: input.traceId, correlationId: input.correlationId, timestamp: new Date().toISOString() } });
-
-        await minioClient.putObject(bucket, key, Buffer.from(content), { 'Content-Type': 'application/json' });
+        const content = JSON.stringify({ ...(typeof input.data === 'object' && input.data !== null ? input.data : { data: input.data }), _meta: { traceId: input.traceId, correlationId: input.correlationId, timestamp: new Date().toISOString() } });
+        const buf = Buffer.from(content);
+        await minioClient.putObject(bucket, key, buf, buf.length, { 'Content-Type': 'application/json' });
 
         logger.debug('Artifact persisted to MinIO', { bucket, key, loanRequestId: input.loanRequestId });
         return key;

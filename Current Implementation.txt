@@ -1,0 +1,775 @@
+Microsoft Windows [Version 10.0.26200.8328]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\Haxor>cd "Desktop\AI Loan App"
+
+C:\Users\Haxor\Desktop\AI Loan App>claude
+╭─── Claude Code v2.1.126 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                                    │ Tips for getting started                                                                    │
+│            Welcome back Moiz Ali Moomin!           │ Run /init to create a CLAUDE.md file with instructions for Claude                           │
+│                                                    │ ─────────────────────────────────────────────────────────────────────────────────────────── │
+│                       ▐▛███▜▌                      │ What's new                                                                                  │
+│                      ▝▜█████▛▘                     │ The `/model` picker now lists models from your gateway's `/v1/models` endpoint when `ANTHR… │
+│                        ▘▘ ▝▝                       │ - Added `claude project purge [path]` to delete all Claude Code state for a project (trans… │
+│    Sonnet 4.6 with medium effort · Claude Pro ·    │ `--dangerously-skip-permissions` now bypasses prompts for writes to `.claude/`, `.git/`, `… │
+│    moiz.7152@gmail.com's Organization              │ /release-notes for more                                                                     │
+│                ~\Desktop\AI Loan App               │                                                                                             │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+> You are a principal enterprise systems architect and platform auditor.
+
+  Your task is to analyze my codebase and infrastructure architecture for an Enterprise Decision Operating System (EDOS).
+
+  You must deeply inspect:
+  - frontend
+  - backend
+  - APIs
+  - workflows
+  - observability
+  - event systems
+  - AI governance
+  - orchestration
+  - infra
+  - security
+  - compliance
+  - lineage
+  - replayability
+  - audit systems
+  - Kubernetes configuration
+  - CI/CD
+  - runtime architecture
+  - data architecture
+
+  Your goal is to determine:
+
+  1. What is FULLY implemented
+  2. What is PARTIALLY implemented
+  3. What is MISSING
+  4. What is ARCHITECTURALLY INCORRECT
+  5. What is OVERENGINEERED
+  6. What is UNDERENGINEERED
+  7. What is NOT ENTERPRISE READY
+  8. What creates operational risk
+  9. What creates scaling risk
+  10. What creates governance/compliance risk
+
+  ---
+
+  # SYSTEM CONTEXT
+
+  This platform is intended to become an:
+
+  Enterprise Decision Operating System (EDOS)
+
+  The platform must support:
+  - enterprise workflows
+  - AI-assisted decisions
+  - human approvals
+  - policy enforcement
+  - auditability
+  - replayability
+  - lineage tracking
+  - observability
+  - compliance
+  - deterministic orchestration
+  - event sourcing
+  - multi-tenant governance
+  - explainability
+  - investigation tooling
+  - AI governance
+  - immutable evidence trails
+
+  The platform is NOT merely:
+  - a chatbot
+  - a dashboard
+  - a CRUD SaaS app
+  - a simple workflow tool
+
+  It is intended to become:
+  - a governed operational intelligence platform
+  - a decision infrastructure system
+  - an enterprise execution layer
+
+  ---
+
+  # REQUIRED ANALYSIS FRAMEWORK
+
+  Analyze the system across these domains:
+
+  ## 1. Core Architecture
+  Check:
+  - bounded contexts
+  - service decomposition
+  - modularity
+  - coupling
+  - orchestration boundaries
+  - event-driven architecture
+  - domain modeling
+  - scalability patterns
+
+  Determine:
+  - whether architecture is coherent
+  - whether architecture supports EDOS goals
+  - whether workflows are durable
+  - whether replayability is possible
+
+  ---
+
+  ## 2. Workflow Orchestration
+  Check:
+  - Temporal integration
+  - durable workflows
+  - retries
+  - compensation logic
+  - approval state machines
+  - timeout handling
+  - long-running process support
+  - deterministic execution
+
+  Determine:
+  - whether orchestration is enterprise-grade
+  - whether workflows are replayable
+  - whether business logic improperly exists in APIs/frontend
+
+  ---
+
+  ## 3. Event Sourcing & Messaging
+  Check:
+  - Kafka/NATS usage
+  - event schemas
+  - event immutability
+  - event replay
+  - event versioning
+  - idempotency
+  - dead-letter handling
+  - stream processing
+
+  Determine:
+  - whether event sourcing truly exists
+  - whether events are audit-grade
+  - whether lineage reconstruction is possible
+
+  ---
+
+  ## 4. Decision Lineage
+  Check:
+  - provenance tracking
+  - graph relationships
+  - audit chains
+  - evidence linking
+  - workflow lineage
+  - AI execution lineage
+  - policy lineage
+
+  Determine:
+  - whether a full decision graph exists
+  - whether decisions are explainable
+  - whether forensic reconstruction is possible
+
+  ---
+
+  ## 5. AI Governance
+  Check:
+  - prompt versioning
+  - model lineage
+  - evaluation pipelines
+  - hallucination safeguards
+  - guardrails
+  - tracing
+  - token tracking
+  - model routing
+  - AI observability
+
+  Determine:
+  - whether AI governance is enterprise-grade
+  - whether outputs are reproducible
+  - whether AI execution is auditable
+
+  ---
+
+  ## 6. Security & Governance
+  Check:
+  - RBAC
+  - SSO
+  - Keycloak integration
+  - secrets management
+  - Vault integration
+  - policy enforcement
+  - tenant isolation
+  - API governance
+  - service-to-service auth
+  - zero-trust practices
+
+  Determine:
+  - whether platform is enterprise secure
+  - whether governance boundaries are enforceable
+
+  ---
+
+  ## 7. Observability
+  Check:
+  - OpenTelemetry coverage
+  - tracing completeness
+  - logs
+  - metrics
+  - Sentry integration
+  - AI observability
+  - workflow observability
+  - distributed tracing continuity
+
+  Determine:
+  - whether incidents are debuggable
+  - whether workflows are traceable
+  - whether AI execution is observable
+
+  ---
+
+  ## 8. Compliance & Auditability
+  Check:
+  - immutable audit trails
+  - policy versioning
+  - evidence retention
+  - replay systems
+  - decision history
+  - compliance reporting
+  - retention policies
+
+  Determine:
+  - whether the system is audit-grade
+  - whether regulatory compliance is realistically achievable
+
+  ---
+
+  ## 9. Infrastructure & Platform Engineering
+  Check:
+  - Kubernetes architecture
+  - Helm charts
+  - ArgoCD
+  - GitOps maturity
+  - autoscaling
+  - resiliency
+  - multi-environment support
+  - disaster recovery
+  - backup systems
+
+  Determine:
+  - whether infrastructure is production-grade
+  - whether operational maturity exists
+
+  ---
+
+  ## 10. Data & Intelligence Layer
+  Check:
+  - PostgreSQL usage
+  - ClickHouse usage
+  - OpenSearch architecture
+  - Neo4j usage
+  - Qdrant usage
+  - DataHub integration
+  - data lineage
+  - analytics architecture
+
+  Determine:
+  - whether data architecture supports:
+    - analytics
+    - investigations
+    - lineage
+    - replayability
+    - explainability
+
+  ---
+
+  # REQUIRED OUTPUT FORMAT
+
+  Return results in EXACTLY this structure:
+
+  # ✅ Fully Implemented
+  - item
+  - item
+  - item
+
+  # ⚠️ Partially Implemented
+  For each item include:
+  - current state
+  - what's missing
+  - operational risk
+  - architectural recommendation
+
+  # ❌ Missing
+  For each missing capability include:
+  - why it matters
+  - recommended tooling
+  - implementation priority
+  - enterprise impact
+
+  # 🚨 Architectural Risks
+  List:
+  - coupling risks
+  - scalability risks
+  - governance risks
+  - replayability gaps
+  - compliance weaknesses
+  - security weaknesses
+
+  # 🧠 Architecture Maturity Assessment
+  Score:
+  - Infrastructure Maturity
+  - Governance Maturity
+  - AI Governance Maturity
+  - Observability Maturity
+  - Replayability Maturity
+  - Compliance Readiness
+  - Enterprise Readiness
+  - Operational Resilience
+
+  Use scores from 1–10.
+
+  # 🗺 Recommended Next Implementation Order
+  Provide a phased roadmap:
+  - Phase 1
+  - Phase 2
+  - Phase 3
+  - Phase 4
+
+  Focus on:
+  - highest architectural leverage
+  - lowest operational complexity
+  - strongest enterprise value
+
+  # 🏛 Final Verdict
+  State:
+  - whether this is truly becoming an Enterprise Decision Operating System
+  - biggest remaining gaps
+  - biggest architectural strengths
+  - whether architecture is coherent or fragmented
+  - whether the stack is overengineered or strategically designed
+
+  IMPORTANT:
+  Be brutally honest.
+  Do not give generic praise.
+  Treat this as a real enterprise architecture review.
+
+● I'll do a deep codebase exploration first before producing the audit. Spawning a thorough read-only investigation across all domains.
+
+● Explore(Deep codebase architecture audit)
+  ⎿  Done (72 tool uses · 130.2k tokens · 5m 35s)
+  (ctrl+o to expand)
+
+● Let me read the full audit output from the saved file.
+
+  Searched for 1 pattern, read 2 files, searched memories (ctrl+o to expand)
+
+● Good. Now let me do targeted reads on the areas the exploration summarized but didn't fully read — CI/CD, Helm, and any missing infrastructure.
+
+  Searched for 2 patterns, read 1 file (ctrl+o to expand)
+
+● Now let me read the remaining critical files that weren't fully covered.
+
+  Read 9 files (ctrl+o to expand)
+
+● I now have a complete picture of the codebase. Let me produce the full audit.
+
+  ---
+  Enterprise Decision Operating System — Architecture Audit
+
+  Platform: AI Loan Governance Platform | Auditor: Principal Systems Architect | Date: 2026-05-08
+
+  ---
+  ✅ Fully Implemented
+
+  - Temporal durable workflow — 6-step loan approval pipeline (validate → policy → fraud → AI → human → finalize) with signal-based human approval,
+  exponential retry, 24hr timeout, and ESCALATED fallback
+  - PostgreSQL multi-tenant schema — 11 tables with tenant isolation, composite indexes, audit_logs range-partitioned by month, DB-level
+  immutability rules (no_update_audit, no_delete_audit)
+  - SHA256-chained immutable audit trail — Each record hashes itself + previous_hash; /audit/:id/integrity endpoint verifies chain continuity at
+  runtime
+  - OPA policy engine integration — 3 Rego policies (approval, compliance, fraud) with hard violations and soft flags; fallback evaluation on OPA
+  unavailability; policy_versions table with SHA256 checksums
+  - Regulatory compliance rules — ECOA, TILA, BSA/AML, FCRA codified in compliance.rego
+  - Kafka event bus — 5 topics, typed event envelopes with traceId/correlationId propagation, 7-day retention, 3-partition creation
+  - OpenTelemetry full stack — Traces (Tempo), metrics (Prometheus), logs (Loki), Grafana dashboards, W3C context propagation across all service
+  boundaries
+  - Structured pino logging — Auto-injects OTel traceId/spanId into every log record at the logger level
+  - Decision lineage API — /audit/:id/lineage returns policyVersions, aiDecisions, humanApprovals, and full event timeline in a single response
+  - MinIO artifact storage — 4 typed buckets (ai-prompts, ai-responses, workflow-snapshots, compliance-artifacts); artifacts keyed as
+  {tenantId}/{loanRequestId}/{type}-{timestamp}.json
+  - Prompt versioning — PromptManager stores prompt input and LLM response in MinIO with version metadata; prompt_storage_key and
+  response_storage_key persisted to ai_decisions table
+  - Prometheus alert rules — 7 configured: high-risk loan spike, AI latency p95, policy violation rate, workflow failure rate, approval queue depth,
+   Kafka consumer lag, DB connection saturation
+  - Kubernetes base manifests — Deployments, HPA (2–10 replicas on CPU/mem), Services, Ingress (TLS via cert-manager), PVCs, RBAC (least-privilege
+  SA), Kustomize
+  - Zero-downtime rolling deployment — maxSurge:1 / maxUnavailable:0 on api-gateway; non-root security contexts with read-only root filesystem
+  - JWT authentication + RBAC — requireAuth and requireRole middleware; admin and reviewer roles enforced at route level
+  - E2E smoke test — test-e2e.sh exercises auth → loan submission → workflow completion → audit trail → AI decision → policy evaluation
+  - Hot-reload dev environment — docker-compose.dev.yml with tsx watch + bind mounts for all 6 services
+  - Metrics registry — Counters and histograms for loans, workflows, AI, policy, human approvals, Kafka, and audit
+  - Graceful shutdown — SIGTERM handlers on every service (Kafka disconnect, pool drain, Temporal worker shutdown)
+  - Fraud scoring activity — Deterministic signals (credit score, income ratio, KYC, address) in workflow activities
+  - Trace context propagation — injectTraceHeaders/extractTraceContext wired on all inter-service HTTP calls
+
+  ---
+  ⚠️ Partially Implemented
+
+  1. AI Execution / LLM Integration
+  - Current state: AI_MOCK_MODE=true is the hardcoded default across all environments. The mock LLM uses a deterministic scoring formula. OpenAI key
+   is a placeholder.
+  - What's missing: No real model routing, no production LLM provider integration, no prompt injection detection, no output schema validation, no
+  token budget enforcement, no cost tracking, no A/B prompt comparison, no evaluation pipeline against ground truth.
+  - Operational risk: The entire AI governance layer—the platform's stated differentiator—is a stub. An AI_MOCK_MODE environment variable is an
+  invisible production footgun.
+  - Recommendation: Implement model router with provider abstraction (ILLMProvider), gate real execution behind circuit breaker, add output JSON
+  schema validation before inserting to ai_decisions, enforce token budget per tenant.
+
+  ---
+  2. Event Sourcing
+  - Current state: Kafka topics publish events. Consumers process them. Audit log records events. This is event-driven architecture, not event
+  sourcing.
+  - What's missing: fromBeginning: false in the consumer means events cannot be replayed. There is no schema registry (no Confluent Schema Registry,
+   no Avro/Protobuf schemas). No dead-letter queue. No idempotency key deduplication in consumer handlers. No event store projection rebuild
+  tooling. No event versioning strategy beyond version: "1.0".
+  - Operational risk: If the audit_logs table is corrupted or a consumer crashes mid-flight, there is no ability to reconstruct state from the Kafka
+   log. This is the single biggest architectural gap relative to EDOS goals.
+  - Recommendation: Set fromBeginning: true with committed offsets stored in Kafka. Add Confluent Schema Registry. Implement idempotency via
+  event.id deduplication in Redis. Add DLQ topic per primary topic. Build a replay CLI that consumes from offset 0 to rebuild projections.
+
+  ---
+  3. Kubernetes Infrastructure
+  - Current state: infra/k8s/base/ has Deployments, HPA, Services, Ingress, PVCs, RBAC, Kustomize.
+  - What's missing: No Helm charts. No ArgoCD or GitOps configuration. No environment overlays (staging/, production/ Kustomize). No NetworkPolicy
+  manifests (all pods can communicate freely). No PodDisruptionBudget. No VPA. services.yaml has a stub metrics: '' placeholder. secrets.yaml uses
+  base64 plaintext (not Vault-injected).
+  - Operational risk: The K8s config cannot be deployed to any real cluster without manual secret substitution. Without NetworkPolicy, a compromised
+   pod has unrestricted internal network access.
+  - Recommendation: Add Helm with environment-specific values files. Add ArgoCD ApplicationSets. Add NetworkPolicy (deny-all, explicit allow). Add
+  PodDisruptionBudget. Wire Vault agent sidecar injection for secrets.
+
+  ---
+  4. Security Hardening
+  - Current state: JWT auth, RBAC middleware, Fastify helmet, rate limiting at gateway, K8s RBAC SA, non-root containers.
+  - What's missing: Password comparison is explicitly skipped in the auth route (// demo: no hash check). No Keycloak or any SSO/OIDC integration.
+  No Vault client — only an annotation comment in secrets.yaml. No service-to-service mTLS. Kafka has no SASL authentication. OPA is accessible
+  without credentials. No API key management for tenant machine clients.
+  - Operational risk: A stolen JWT can be used indefinitely (no revocation). Kafka is an open bus—any process that reaches port 9092 can
+  produce/consume any topic.
+  - Recommendation: Implement bcrypt comparison immediately. Add Keycloak for OIDC. Deploy Vault with agent sidecar. Enable Kafka SASL/SCRAM + ACLs.
+   Add service mesh (Istio) for mTLS.
+
+  ---
+  5. Multi-Tenancy
+  - Current state: tenant_id foreign keys on all tables. Per-tenant config JSONB. OPA policies accept tenantId in input.
+  - What's missing: All tenants share the same Kafka topics with no header-based partition isolation. No per-tenant OPA bundle deployment (all
+  tenants see the same policy). No tenant API key management. No tenant onboarding/provisioning flow. No tenant-level rate limiting (only global).
+  No data residency enforcement per tenant.
+  - Operational risk: A misconfigured query without a tenant_id filter would cross-contaminate tenant data. There is no database-level row security
+  (PostgreSQL RLS not used).
+  - Recommendation: Enable PostgreSQL Row-Level Security policies keyed to app.current_tenant_id. Add per-tenant OPA data bundle delivery. Add
+  tenant headers to Kafka messages with consumer-side filtering enforcement.
+
+  ---
+  6. Human Approval Workflow
+  - Current state: approval_records table with PENDING/COMPLETED states, due_at (24hr SLA), Temporal signal delivery, ESCALATED timeout state.
+  - What's missing: No notification system (no email, Slack, webhook on assignment). No reviewer assignment logic. No escalation routing when due_at
+   passes—status becomes ESCALATED but no automated action follows. No SLA breach dashboard. No reassignment capability.
+  - Operational risk: In production, a reviewer could never know a loan needs their attention. ESCALATED loans accumulate silently.
+  - Recommendation: Add notification activity in workflow (email via SES, Slack webhook). Build escalation Temporal child workflow triggered at
+  due_at. Add a reviewer assignment service with load balancing.
+
+  ---
+  7. Compliance Action Execution
+  - Current state: compliance.rego correctly identifies ECOA, TILA, BSA/AML, FCRA violations and returns required_actions (e.g., FILE_SAR,
+  GENERATE_ADVERSE_ACTION_NOTICE).
+  - What's missing: None of these required actions are executed anywhere in the codebase. No adverse action notice generation. No SAR filing
+  workflow. No TILA disclosure generation. Compliance flags are computed and stored but dead-end.
+  - Operational risk: This platform would fail a regulatory examination. Generating the correct policy flag but not acting on it is worse than not
+  having the check, because it demonstrates knowledge of the violation.
+  - Recommendation: Add a executeComplianceActions activity in the workflow that routes each required_action to the appropriate handler service.
+  Treat adverse action notices as first-class workflow artifacts stored in the compliance-artifacts MinIO bucket.
+
+  ---
+  8. Observability Completeness
+  - Current state: Full LGTM stack, OTel auto-instrumentation, withSpan wrapper, structured logs, Prometheus scrape on all services, 2 Grafana
+  dashboards.
+  - What's missing: workflow-service/src/api.ts metrics endpoint returns a static comment (# workflow-service metrics\n). No AI-specific
+  observability (token usage trends, prompt version performance, confidence score distribution over time). No business SLO dashboards (approval
+  rate, time-to-decision, human review rate). No Grafana OnCall / alertmanager routing. Sentry not integrated despite being in the stated stack.
+  - Operational risk: Grafana alerts fire but route nowhere. The workflow service metrics are a stub.
+  - Recommendation: Wire Prometheus metrics to alertmanager with PagerDuty/Slack routing. Build AI observability dashboard (risk score drift, model
+  version comparison). Implement workflow service Prometheus metrics properly.
+
+  ---
+  ❌ Missing
+
+  1. CI/CD Pipelines
+  - Why it matters: Zero automated testing, building, scanning, or deployment. Manual deployments are error-prone and unauditable.
+  - Recommended tooling: GitHub Actions (build, lint, test, Docker build+push, security scan), ArgoCD (GitOps deploy)
+  - Priority: Critical — this is prerequisite infrastructure for everything else
+  - Enterprise impact: No CI/CD means no branch protection, no deployment approvals, no rollback triggers. Unacceptable for a compliance platform.
+
+  ---
+  2. Helm Charts
+  - Why it matters: The K8s base manifests cannot be parameterized for different environments without Helm or Kustomize overlays.
+  - Recommended tooling: Helm 3 with values files per environment
+  - Priority: High
+  - Enterprise impact: Cannot deploy to staging vs production with different configs.
+
+  ---
+  3. ArgoCD / GitOps
+  - Why it matters: Without GitOps, there is no audit trail of what was deployed when, no automatic drift detection, no reconciliation.
+  - Recommended tooling: ArgoCD with ApplicationSets
+  - Priority: High
+  - Enterprise impact: A compliance platform must be able to prove that what runs in production exactly matches what is in git.
+
+  ---
+  4. HashiCorp Vault
+  - Why it matters: secrets.yaml contains base64 plaintext credentials. This is not secrets management — it is secret storage in git.
+  - Recommended tooling: Vault with agent sidecar injection + AppRole auth
+  - Priority: Critical before any production deployment
+  - Enterprise impact: If the git repo is ever cloned by an unauthorized party, all credentials are exposed.
+
+  ---
+  5. Keycloak / SSO / OIDC
+  - Why it matters: Enterprise customers require SSO (Okta, Azure AD, Google Workspace). Hard-coded email/password auth is a non-starter for
+  enterprise procurement.
+  - Recommended tooling: Keycloak with OIDC provider federation
+  - Priority: High
+  - Enterprise impact: Blocks enterprise sales.
+
+  ---
+  6. Schema Registry (Confluent / Apicurio)
+  - Why it matters: Kafka events have no enforced schema. A producer schema change silently breaks all consumers.
+  - Recommended tooling: Confluent Schema Registry with Avro or Protobuf
+  - Priority: High
+  - Enterprise impact: Without schema evolution contracts, adding a new service or changing an event breaks production silently.
+
+  ---
+  7. Event Replay Infrastructure
+  - Why it matters: The entire value proposition of event sourcing — replayability, state reconstruction, forensic investigation — requires the
+  ability to consume from offset 0. This is disabled.
+  - Recommended tooling: Kafka consumer with fromBeginning: true + committed offsets; replay CLI using kafkajs admin
+  - Priority: Critical for EDOS claims
+  - Enterprise impact: Without replay, the platform cannot perform forensic reconstruction, incident investigation, or compliance re-auditing.
+
+  ---
+  8. Graph Database (Neo4j)
+  - Why it matters: Decision lineage is currently modeled as a flat JOIN across 5 tables. Forensic investigation ("show me everything that
+  contributed to this decision") requires graph traversal.
+  - Recommended tooling: Neo4j or Amazon Neptune; write decision nodes + edges on each workflow step
+  - Priority: Medium-High
+  - Enterprise impact: The audit lineage endpoint returns flattened arrays, not a queryable decision graph. Regulators and investigators need
+  graph-level provenance.
+
+  ---
+  9. OLAP Analytics (ClickHouse)
+  - Why it matters: Risk score trends, approval rate analytics, reviewer performance, fraud pattern analysis, and compliance reporting require
+  column-store aggregation. PostgreSQL cannot serve these workloads without degrading transactional performance.
+  - Recommended tooling: ClickHouse or Apache Druid
+  - Priority: Medium
+  - Enterprise impact: No business intelligence layer means the platform cannot justify itself to financial operations teams.
+
+  ---
+  10. Dead Letter Queue (DLQ)
+  - Why it matters: When a Kafka message handler throws, the current consumer logs the error and continues. That event is permanently lost.
+  - Recommended tooling: DLQ topic per primary topic + retry consumer with backoff
+  - Priority: High
+  - Enterprise impact: Lost events mean incomplete audit trails — a compliance failure.
+
+  ---
+  11. GDPR / Data Subject Rights
+  - Why it matters: loan_requests stores PII (national_id, DOB, address, income). There is no erasure, portability, or access API.
+  - Recommended tooling: Data subject request workflow, field-level pseudonymization, retention policy enforcement
+  - Priority: Critical for EU/UK deployments
+  - Enterprise impact: Regulatory non-compliance for any European customer.
+
+  ---
+  12. Service Mesh (mTLS)
+  - Why it matters: All inter-service HTTP calls are plaintext inside the cluster. An attacker with pod-level access can MITM any service call.
+  - Recommended tooling: Istio or Linkerd
+  - Priority: High for production
+  - Enterprise impact: Fails PCI DSS, SOC 2 network security requirements.
+
+  ---
+  13. Real AI Provider Integration
+  - Why it matters: The platform's entire value proposition is AI-assisted governance. The AI layer is mocked.
+  - Recommended tooling: Anthropic Claude API (claude-sonnet-4-6) or OpenAI behind a provider abstraction interface; add LangSmith or Weights &
+  Biases for model observability
+  - Priority: Critical for product viability
+  - Enterprise impact: The platform is currently a deterministic rule engine with extra steps.
+
+  ---
+  🚨 Architectural Risks
+
+  Coupling Risks
+  - The workflow activities make direct HTTP calls to policy-service and ai-execution-service URLs. If either is down, Temporal retries consume for
+  30 minutes before the activity times out. There is no circuit breaker between activities and downstream services.
+  - The event-consumer makes a synchronous HTTP call to audit-service inside a Kafka message handler. If audit-service is slow, Kafka consumer group
+   lag grows indefinitely.
+  - The runFraudAnalysis activity contains business logic (fraud scoring formula) that should be in the policy-service or a dedicated fraud-service.
+
+  Scalability Risks
+  - The SHA256 audit chain requires a sequential lock: every createRecord does SELECT (latest hash) then INSERT. Under concurrent writes from
+  multiple services, this is a serialization point. At high throughput (>100 loans/minute), this will become a bottleneck.
+  - Kafka topics have replicationFactor: 1. A single Kafka broker failure permanently loses all in-flight messages and stored events.
+  - All Temporal worker concurrency is configured on a single worker pod (maxConcurrentActivityTaskExecutions: 20). Long-running human approval
+  workflows (up to 24hrs) hold workflow task slots.
+  - audit_logs monthly partitions are pre-created only through 2027. After that date, inserts will fail with no partition available.
+
+  Governance Risks
+  - Compliance-required actions (FILE_SAR, GENERATE_ADVERSE_ACTION_NOTICE) are detected but never executed. The system knows about regulatory
+  violations and does nothing.
+  - OPA is a hard dependency for policy enforcement. The fallback is substantially more permissive than the real OPA policy — an OPA crash makes the
+   system approve loans it should reject.
+  - There are no tenant-level policy overrides in the Kubernetes/OPA deployment. Tenant config lives in PostgreSQL JSONB, but OPA cannot read it
+  dynamically without a data API.
+
+  Replayability Gaps
+  - fromBeginning: false means Kafka is used as a transport, not an event store. There is no ability to replay historical events to rebuild state.
+  - Workflow snapshots are written to MinIO but there is no read path, no snapshot restore procedure, and no documentation of how to replay a
+  workflow from a snapshot.
+  - The audit_logs table records events but does not store the complete state snapshot at each step — only the event payload. Reconstructing full
+  loan state requires joining 8+ tables.
+
+  Compliance Weaknesses
+  - PostgreSQL Row-Level Security is not enabled. A query bug that drops the tenant_id filter exposes all tenants' data.
+  - There is no data retention enforcement. The audit_logs table grows indefinitely. Retention policies must balance compliance (keep for 7 years)
+  vs. privacy (delete PII after X days).
+  - The national_id field is stored in plaintext. This is a GDPR/PCI risk.
+  - No GDPR data subject rights implementation.
+
+  Security Weaknesses
+  - JWT tokens are stored in localStorage (XSS attack surface). Should use httpOnly cookies.
+  - The auth route in demo mode accepts any password for any user. There is no warning or environment gate preventing this from reaching production.
+  - OPA server is exposed on port 8181 with no authentication. Any pod in the cluster can query or modify policy evaluation.
+  - Kafka is unauthenticated PLAINTEXT. Any process reaching Kafka can publish to any topic, including audit_events.
+  - secrets.yaml contains base64 credentials that will be committed to git if not gitignored.
+
+  ---
+  🧠 Architecture Maturity Assessment
+
+  ┌─────────────────────┬───────┬───────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │       Domain        │ Score │                                                   Rationale                                                   │
+  ├─────────────────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Infrastructure      │ 4/10  │ Docker Compose + K8s base exists. No CI/CD, no Helm, no ArgoCD, no network policies, no PDBs, no Vault wiring │
+  │ Maturity            │       │                                                                                                               │
+  ├─────────────────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Governance Maturity │ 6/10  │ OPA + policy versioning + compliance rules are strong. Compliance actions are not executed. No tenant-level   │
+  │                     │       │ policy deployment                                                                                             │
+  ├─────────────────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ AI Governance       │ 3/10  │ Prompt versioning and MinIO storage are correct concepts. The AI layer is entirely mocked. No evaluation      │
+  │ Maturity            │       │ pipeline, no model observability, no guardrails                                                               │
+  ├─────────────────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Observability       │ 7/10  │ Full LGTM stack, OTel auto-instrumentation, structured logs, 7 alert rules. Missing: alertmanager routing,    │
+  │ Maturity            │       │ AI-specific dashboards, workflow service metrics stub                                                         │
+  ├─────────────────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Replayability       │ 2/10  │ The infrastructure exists (Kafka, MinIO snapshots, audit_logs) but replay is architecturally disabled.        │
+  │ Maturity            │       │ fromBeginning: false. No replay tooling                                                                       │
+  ├─────────────────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Compliance          │ 3/10  │ Rules are defined and detected. None are enforced or acted upon. No GDPR. No compliance reporting. No data    │
+  │ Readiness           │       │ retention enforcement                                                                                         │
+  ├─────────────────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Enterprise          │ 3/10  │ No SSO, no Vault, no mTLS, no CI/CD, no Helm, passwords not validated. Strong conceptual architecture but not │
+  │ Readiness           │       │  deployable to an enterprise environment                                                                      │
+  ├─────────────────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Operational         │ 5/10  │ Temporal retries, graceful shutdown, health checks, and HPA are solid. Single Kafka broker, no backup         │
+  │ Resilience          │       │ strategy, no DR, audit chain serialization bottleneck                                                         │
+  └─────────────────────┴───────┴───────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  Overall Platform Maturity: 4.1/10
+
+  ---
+  🗺 Recommended Next Implementation Order
+
+  Phase 1 — Make It Actually Deployable (Weeks 1–3)
+
+  Prerequisite engineering that unlocks everything else
+
+  1. Fix the password hash verification in auth.ts — one-line fix with bcrypt, zero delay acceptable
+  2. Add GitHub Actions CI — build, lint, test, Docker build, image push, test-e2e.sh
+  3. Add Vault agent sidecar — replace secrets.yaml plaintext with Vault-injected secrets; add Vault AppRole auth
+  4. Add PostgreSQL Row-Level Security — CREATE POLICY tenant_isolation ON loan_requests USING (tenant_id =
+  current_setting('app.current_tenant_id')::uuid)
+  5. Add audit_log partition for 2028–2035 — prevents future insert failure
+  6. Fix Kafka consumer DLQ — add dead-letter topic per primary topic; log and route failed messages
+  7. Enable Kafka SASL/SCRAM — add credentials to docker-compose and K8s configs
+
+  Phase 2 — Make It Enterprise-Grade (Weeks 4–8)
+
+  Security and governance foundations that enterprise procurement requires
+
+  1. Keycloak integration — OIDC provider with SAML federation support; replace hard-coded JWT auth
+  2. Service mesh (Istio) — mTLS between all services; observability at the mesh layer
+  3. Kubernetes Helm charts — parameterized for dev/staging/prod; ArgoCD ApplicationSet
+  4. NetworkPolicy manifests — deny-all ingress/egress with explicit allowlists per service
+  5. Fix the OPA fallback — make fallback as restrictive as OPA (or fail-closed instead of fail-open)
+  6. Implement compliance action execution — adverse action notices, SAR routing, TILA disclosure as workflow activities
+
+  Phase 3 — Enable EDOS Core Capabilities (Weeks 9–16)
+
+  The capabilities that differentiate this as a Decision Operating System
+
+  1. Real LLM integration — Provider abstraction layer, Anthropic Claude integration, output schema validation, token budget per tenant
+  2. Fix event replay — fromBeginning: true with committed offsets, Confluent Schema Registry, idempotency keys
+  3. Neo4j decision graph — Write decision nodes + edges on each workflow step; expose graph query API for lineage investigation
+  4. Notification system — Email/Slack on human approval assignment, SLA breach, escalation; build proper reviewer assignment with load balancing
+  5. AI model evaluation pipeline — Ground truth dataset, scoring metrics, prompt A/B testing, confidence calibration monitoring
+  6. GDPR data subject rights API — Access, portability, erasure, pseudonymization of PII fields
+
+  Phase 4 — Intelligence Layer (Weeks 17–24)
+
+  Analytics, investigation, and operational intelligence
+
+  1. ClickHouse analytics — CDC from PostgreSQL via Debezium; risk trend analysis, approval rate analytics, reviewer performance
+  2. OpenSearch investigation — Full-text index of loan documents, audit events, policy evaluations for investigator tooling
+  3. DataHub data lineage — Catalog all data assets, track lineage from raw PII → AI decision → compliance action
+  4. Business SLO dashboards — Time-to-decision, human review rate, false positive rate, cost-per-decision
+  5. Multi-region Temporal — Active-active or active-standby for disaster recovery
+  6. Automated compliance reporting — Scheduled reports: loan approval demographics (ECOA), adverse action notice count (FCRA), high-value
+  transaction volume (BSA/AML)
+
+  ---
+  🏛 Final Verdict
+
+  Is this truly becoming an Enterprise Decision Operating System?
+
+  Not yet — but the skeleton is architecturally coherent and the bones are in the right places.
+
+  What this actually is today: A well-designed governed workflow platform with strong operational patterns (Temporal, OPA, OTel, immutable audit)
+  built around a deterministic mock AI. It is a governance-ready loan approval system, not yet a Decision Operating System.
+
+  Biggest Architectural Strengths:
+  - The Temporal workflow design is correct and enterprise-grade. The 6-step state machine with signal-based human approval is exactly how a durable
+   decision process should work.
+  - The SHA256-chained audit trail with database-level immutability rules is production-quality compliance infrastructure — this is not easy to get
+  right and it is right.
+  - The OPA policy architecture with versioning, checksums, and per-path evaluation is the correct pattern for separable, auditable governance.
+  - OpenTelemetry is wired correctly at the package level with context propagation — this is the right foundation for distributed observability.
+  - The monorepo shared-types/kafka/telemetry/logger/database packages prevent drift between services. This is good platform engineering discipline.
+
+  Biggest Remaining Gaps:
+  1. The AI layer is entirely mocked. The platform's core value proposition does not exist yet.
+  2. Event replay is architecturally disabled. The EDOS goal of replayability cannot be achieved.
+  3. Compliance actions are detected and ignored. This is a regulatory liability, not a feature.
+  4. There is no CI/CD, Helm, ArgoCD, or Vault. The infrastructure exists on paper but cannot be deployed safely.
+  5. Enterprise security requirements (SSO, mTLS, Vault, RBAC beyond 2 roles) are absent.
+
+  Is the architecture coherent or fragmented?
+
+  Coherent within each service, but the seams are weak. The event-driven architecture is aspirational — Kafka is used as a message bus, not an event
+   store. The AI governance layer is a placeholder. The compliance enforcement layer is incomplete. The system has the vocabulary of an EDOS
+  (lineage, replayability, governance, observability) without the full implementation of those concepts.
+
+  Is the stack overengineered or strategically designed?
+
+  Strategically designed — with one important exception. The LGTM observability stack (Loki + Grafana + Tempo + Prometheus + OTel Collector) running
+   in local Docker Compose alongside 23 other services requires 12–16GB RAM minimum and represents significant friction for contributors. This
+  should be streamlined for development, with the full stack reserved for staging/production.
+
+  The Temporal + OPA + Kafka + MinIO combination is not overengineered — it is exactly the right stack for a governed, auditable, durable decision
+  system. The architectural decisions are defensible and coherent with enterprise requirements. The gaps are implementation gaps, not design
+  failures.
+
+  Bottom line: This is a strong v0.5 of a platform with the right architectural DNA. The path to a production enterprise system requires
+  approximately 16–20 weeks of disciplined engineering focused on the four phases above, with Phase 1 being non-negotiable before any customer
+  conversation.
+
+✻ Baked for 7m 43s

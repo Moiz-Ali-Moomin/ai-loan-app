@@ -26,6 +26,7 @@ RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nodeapp
 COPY --from=builder --chown=nodeapp:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodeapp:nodejs /app/packages ./packages
 COPY --from=builder --chown=nodeapp:nodejs /app/services/audit-service/dist ./services/audit-service/dist
+COPY --from=builder --chown=nodeapp:nodejs /app/services/audit-service/package.json ./services/audit-service/
 USER nodeapp
 EXPOSE 3004
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \

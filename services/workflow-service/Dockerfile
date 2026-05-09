@@ -33,6 +33,7 @@ COPY --from=builder --chown=nodeapp:nodejs /app/packages ./packages
 COPY --from=builder --chown=nodeapp:nodejs /app/services/workflow-service/dist ./services/workflow-service/dist
 USER nodeapp
 COPY --from=builder --chown=nodeapp:nodejs /app/services/workflow-service/package.json ./services/workflow-service/
+EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost:3001/health || exit 1
 CMD ["node", "services/workflow-service/dist/workers/worker.js"]

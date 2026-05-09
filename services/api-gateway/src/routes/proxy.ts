@@ -2,7 +2,7 @@
  * Thin proxy routes that forward requests from the API Gateway to
  * downstream services. This keeps a single origin for the frontend.
  */
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import axios from 'axios';
 import { requireAuth } from '../middleware/auth.js';
 import { config } from '../config/index.js';
@@ -31,19 +31,19 @@ async function forward(
 export default async function proxyRoutes(fastify: FastifyInstance) {
   // ── AI Service Proxy ─────────────────────────────────────────
 
-  fastify.get(
+  fastify.get<{ Querystring: { limit?: number } }>(
     '/ai/decisions',
     { preHandler: [requireAuth] },
-    async (request: FastifyRequest<{ Querystring: { limit?: number } }>, reply: FastifyReply) => {
+    async (request, reply) => {
       const data = await forward(config.services.ai, '/api/v1/ai/decisions', 'GET', request.query, proxyHeaders(request));
       return reply.send(data);
     }
   );
 
-  fastify.get(
+  fastify.get<{ Params: { loanRequestId: string } }>(
     '/ai/decisions/:loanRequestId',
     { preHandler: [requireAuth] },
-    async (request: FastifyRequest<{ Params: { loanRequestId: string } }>, reply: FastifyReply) => {
+    async (request, reply) => {
       const data = await forward(config.services.ai, `/api/v1/ai/decisions/${request.params.loanRequestId}`, 'GET', undefined, proxyHeaders(request));
       return reply.send(data);
     }
@@ -51,37 +51,37 @@ export default async function proxyRoutes(fastify: FastifyInstance) {
 
   // ── Audit Service Proxy ──────────────────────────────────────
 
-  fastify.get(
+  fastify.get<{ Querystring: { limit?: number; tenantId?: string } }>(
     '/audit/activity',
     { preHandler: [requireAuth] },
-    async (request: FastifyRequest<{ Querystring: { limit?: number; tenantId?: string } }>, reply: FastifyReply) => {
+    async (request, reply) => {
       const data = await forward(config.services.audit, '/api/v1/audit/activity', 'GET', request.query, proxyHeaders(request));
       return reply.send(data);
     }
   );
 
-  fastify.get(
+  fastify.get<{ Params: { loanRequestId: string } }>(
     '/audit/loans/:loanRequestId',
     { preHandler: [requireAuth] },
-    async (request: FastifyRequest<{ Params: { loanRequestId: string } }>, reply: FastifyReply) => {
+    async (request, reply) => {
       const data = await forward(config.services.audit, `/api/v1/audit/loans/${request.params.loanRequestId}`, 'GET', undefined, proxyHeaders(request));
       return reply.send(data);
     }
   );
 
-  fastify.get(
+  fastify.get<{ Params: { loanRequestId: string } }>(
     '/audit/loans/:loanRequestId/lineage',
     { preHandler: [requireAuth] },
-    async (request: FastifyRequest<{ Params: { loanRequestId: string } }>, reply: FastifyReply) => {
+    async (request, reply) => {
       const data = await forward(config.services.audit, `/api/v1/audit/loans/${request.params.loanRequestId}/lineage`, 'GET', undefined, proxyHeaders(request));
       return reply.send(data);
     }
   );
 
-  fastify.get(
+  fastify.get<{ Params: { loanRequestId: string } }>(
     '/audit/loans/:loanRequestId/integrity',
     { preHandler: [requireAuth] },
-    async (request: FastifyRequest<{ Params: { loanRequestId: string } }>, reply: FastifyReply) => {
+    async (request, reply) => {
       const data = await forward(config.services.audit, `/api/v1/audit/loans/${request.params.loanRequestId}/integrity`, 'GET', undefined, proxyHeaders(request));
       return reply.send(data);
     }
@@ -89,19 +89,19 @@ export default async function proxyRoutes(fastify: FastifyInstance) {
 
   // ── Policy Service Proxy ─────────────────────────────────────
 
-  fastify.get(
+  fastify.get<{ Querystring: { limit?: number } }>(
     '/policies/evaluations',
     { preHandler: [requireAuth] },
-    async (request: FastifyRequest<{ Querystring: { limit?: number } }>, reply: FastifyReply) => {
+    async (request, reply) => {
       const data = await forward(config.services.policy, '/api/v1/policies/evaluations', 'GET', request.query, proxyHeaders(request));
       return reply.send(data);
     }
   );
 
-  fastify.get(
+  fastify.get<{ Querystring: { name?: string; active?: string } }>(
     '/policies/versions',
     { preHandler: [requireAuth] },
-    async (request: FastifyRequest<{ Querystring: { name?: string; active?: string } }>, reply: FastifyReply) => {
+    async (request, reply) => {
       const data = await forward(config.services.policy, '/api/v1/policies/versions', 'GET', request.query, proxyHeaders(request));
       return reply.send(data);
     }

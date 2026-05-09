@@ -6,7 +6,7 @@ import { createLogger } from '@loan-platform/logger';
 import { withSpan } from '@loan-platform/telemetry';
 import { KafkaProducerClient } from '@loan-platform/kafka';
 import { KafkaTopic } from '@loan-platform/shared-types';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, type JwtPayload } from '../middleware/auth.js';
 import { config } from '../config/index.js';
 import { loanSubmissionsTotal } from './health.js';
 
@@ -179,10 +179,10 @@ export default async function loanRoutes(fastify: FastifyInstance) {
   );
 
   // Get loan request by ID
-  fastify.get(
+  fastify.get<{ Params: { id: string } }>(
     '/loans/:id',
     { preHandler: [requireAuth] },
-    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const pool = fastify.pg;
 
@@ -210,10 +210,10 @@ export default async function loanRoutes(fastify: FastifyInstance) {
   );
 
   // List loan requests
-  fastify.get(
+  fastify.get<{ Querystring: { page?: number; limit?: number; status?: string; tenantId?: string } }>(
     '/loans',
     { preHandler: [requireAuth] },
-    async (request: FastifyRequest<{ Querystring: { page?: number; limit?: number; status?: string; tenantId?: string } }>, reply: FastifyReply) => {
+    async (request, reply) => {
       const { page = 1, limit = 20, status, tenantId } = request.query;
       const offset = (page - 1) * limit;
       const pool = fastify.pg;
@@ -256,10 +256,10 @@ export default async function loanRoutes(fastify: FastifyInstance) {
   );
 
   // Get workflow state
-  fastify.get(
+  fastify.get<{ Params: { id: string } }>(
     '/loans/:id/workflow',
     { preHandler: [requireAuth] },
-    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    async (request, reply) => {
       const pool = fastify.pg;
       const { rows } = await pool.query(
         'SELECT * FROM workflow_runs WHERE loan_request_id = $1 ORDER BY started_at DESC LIMIT 1',
@@ -275,13 +275,13 @@ export default async function loanRoutes(fastify: FastifyInstance) {
   );
 
   // Submit human approval decision
-  fastify.post(
+  fastify.post<{ Params: { id: string }; Body: { decision: 'APPROVE' | 'REJECT'; notes: string } }>(
     '/loans/:id/approval',
     { preHandler: [requireAuth] },
-    async (request: FastifyRequest<{ Params: { id: string }; Body: { decision: 'APPROVE' | 'REJECT'; notes: string } }>, reply: FastifyReply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const { decision, notes } = request.body;
-      const user = request.user;
+      const user = request.user as JwtPayload | undefined;
 
       const connection = await Connection.connect({ address: config.temporal.address });
       const client = new Client({ connection, namespace: config.temporal.namespace });
@@ -306,10 +306,10 @@ export default async function loanRoutes(fastify: FastifyInstance) {
   );
 
   // Get audit trail
-  fastify.get(
+  fastify.get<{ Params: { id: string } }>(
     '/loans/:id/audit',
     { preHandler: [requireAuth] },
-    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    async (request, reply) => {
       const pool = fastify.pg;
       const { rows } = await pool.query(
         `SELECT id, event_type, actor_type, service_name, payload, trace_id, correlation_id, created_at
