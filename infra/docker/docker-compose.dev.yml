@@ -1,15 +1,162 @@
 version: '3.9'
 # ================================================================
-# Dev-only override: runs services with tsx hot-reload via bind mounts
-# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+# Standalone dev stack: tsx hot-reload via bind mounts
+# Usage: docker compose -f infra/docker/docker-compose.dev.yml up
 # ================================================================
 
+networks:
+  loan-platform:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  zookeeper_data:
+  kafka_data:
+  temporal_data:
+
 services:
+
+  # ------------------------------------------------------------------
+  # INFRASTRUCTURE (minimal set needed for dev)
+  # ------------------------------------------------------------------
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: loan-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ai_loan_app
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ai_loan_app"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - loan-platform
+
+  redis:
+    image: redis:7-alpine
+    container_name: loan-redis-dev
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loan-platform
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    container_name: loan-zookeeper-dev
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loan-platform
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: loan-kafka-dev
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=WARN,state.change.logger=WARN"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    networks:
+      - loan-platform
+
+  temporal-postgres:
+    image: postgres:16-alpine
+    container_name: loan-temporal-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    volumes:
+      - temporal_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loan-platform
+
+  temporal:
+    image: temporalio/auto-setup:1.24.2
+    container_name: loan-temporal-dev
+    restart: unless-stopped
+    depends_on:
+      temporal-postgres:
+        condition: service_healthy
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: temporal-postgres
+      ENABLE_ES: "false"
+    ports:
+      - "7233:7233"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 7233 && echo healthy"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - loan-platform
+
+  # ------------------------------------------------------------------
+  # APPLICATION SERVICES (tsx hot-reload)
+  # ------------------------------------------------------------------
+
   api-gateway:
     build:
       context: ../..
       dockerfile: services/api-gateway/Dockerfile
-      target: deps          # stop at deps stage — use host src
+      target: deps
     command: ["npx", "tsx", "watch", "services/api-gateway/src/server.ts"]
     volumes:
       - ../../services/api-gateway/src:/app/services/api-gateway/src:ro
@@ -17,18 +164,67 @@ services:
     environment:
       NODE_ENV: development
       PORT: "3000"
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ai_loan_app
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:29092
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_NAMESPACE: loan-governance
+      JWT_SECRET: change-me-super-secret-jwt-key-min-32-chars
+      WORKFLOW_SERVICE_URL: http://workflow-service:3001
+      POLICY_SERVICE_URL: http://policy-service:3002
+      AI_SERVICE_URL: http://ai-execution-service:3003
+      AUDIT_SERVICE_URL: http://audit-service:3004
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      temporal:
+        condition: service_healthy
+    networks:
+      - loan-platform
 
   workflow-service:
     build:
       context: ../..
       dockerfile: services/workflow-service/Dockerfile
       target: deps
-    command: sh -c "npx tsx services/workflow-service/src/worker.ts & npx tsx services/workflow-service/src/api.ts"
+    command: sh -c "npx tsx watch services/workflow-service/src/workers/worker.ts & npx tsx watch services/workflow-service/src/api.ts"
     volumes:
       - ../../services/workflow-service/src:/app/services/workflow-service/src:ro
       - ../../packages:/app/packages:ro
     environment:
       NODE_ENV: development
+      PORT: "3001"
+      API_PORT: "3001"
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ai_loan_app
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:29092
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_NAMESPACE: loan-governance
+      TEMPORAL_TASK_QUEUE: loan-approval
+      POLICY_SERVICE_URL: http://policy-service:3002
+      AI_SERVICE_URL: http://ai-execution-service:3003
+      AUDIT_SERVICE_URL: http://audit-service:3004
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      temporal:
+        condition: service_healthy
+    networks:
+      - loan-platform
 
   policy-service:
     build:
@@ -42,6 +238,15 @@ services:
     environment:
       NODE_ENV: development
       PORT: "3002"
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ai_loan_app
+      KAFKA_BROKERS: kafka:29092
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - loan-platform
 
   ai-execution-service:
     build:
@@ -55,7 +260,20 @@ services:
     environment:
       NODE_ENV: development
       PORT: "3003"
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ai_loan_app
       AI_MOCK_MODE: "true"
+      KAFKA_BROKERS: kafka:29092
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - loan-platform
 
   audit-service:
     build:
@@ -69,6 +287,17 @@ services:
     environment:
       NODE_ENV: development
       PORT: "3004"
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ai_loan_app
+      KAFKA_BROKERS: kafka:29092
+    ports:
+      - "3004:3004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - loan-platform
 
   event-consumer:
     build:
@@ -81,6 +310,17 @@ services:
       - ../../packages:/app/packages:ro
     environment:
       NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ai_loan_app
+      KAFKA_BROKERS: kafka:29092
+      REDIS_URL: redis://redis:6379
+      AUDIT_SERVICE_URL: http://audit-service:3004
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - loan-platform
 
   frontend:
     build:
@@ -94,3 +334,7 @@ services:
     environment:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:3000
+    ports:
+      - "3006:3000"
+    networks:
+      - loan-platform
