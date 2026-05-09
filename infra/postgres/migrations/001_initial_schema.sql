@@ -284,7 +284,7 @@ CREATE INDEX idx_approval_records_due_at ON approval_records(due_at);
 -- AUDIT LOGS (Append-only, immutable)
 -- ============================================================
 CREATE TABLE audit_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID NOT NULL DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES tenants(id),
     loan_request_id UUID REFERENCES loan_requests(id),
     workflow_run_id UUID REFERENCES workflow_runs(id),
@@ -302,7 +302,8 @@ CREATE TABLE audit_logs (
     user_agent TEXT,
     hash VARCHAR(64) NOT NULL,
     previous_hash VARCHAR(64),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (id, created_at)
 ) PARTITION BY RANGE (created_at);
 
 -- Partition by month
