@@ -20,7 +20,7 @@ ON CONFLICT DO NOTHING;
 
 -- Policy versions
 INSERT INTO policy_versions (id, name, version, description, content, rego_content, checksum, is_active, effective_from, created_by) VALUES
-  ('pppppppp-pppp-pppp-pppp-pppppppppppp',
+  ('e0e0e0e0-e0e0-e0e0-e0e0-e0e0e0e0e0e0',
    'loan_approval', '1.0.0',
    'Initial loan approval policy with KYC, credit score, DTI, and amount thresholds',
    'Loan approval governance policy v1.0.0 - Covers KYC requirements, minimum credit score (580), max DTI (45%), high-value loan escalation ($500k+)',
