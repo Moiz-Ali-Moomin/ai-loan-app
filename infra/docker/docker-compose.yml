@@ -216,11 +216,11 @@ services:
     ports:
       - "7233:7233"
     healthcheck:
-      test: ["CMD", "tctl", "--address", "loan-temporal:7233", "cluster", "health"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 60s
+      test: ["CMD-SHELL", "temporal operator cluster health --address 127.0.0.1:7233 2>/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
     networks:
       - loan-platform
 
