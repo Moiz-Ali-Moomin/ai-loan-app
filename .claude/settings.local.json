@@ -53,7 +53,9 @@
       "Bash(echo \"exit:$?\")",
       "Bash(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\\\\frontend\\\\src\\\\app\\\\\\(dashboard\\)\\\\dashboard\\\\policies\")",
       "Bash(Out-Null)",
-      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\\\\frontend\\\\src\\\\app\\\\\\(dashboard\\)\\\\dashboard\\\\policies\")"
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\\\\frontend\\\\src\\\\app\\\\\\(dashboard\\)\\\\dashboard\\\\policies\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\" -Recurse -Directory)",
+      "PowerShell(docker -H tcp://178.105.99.125:2375 exec $\\(docker -H tcp://178.105.99.125:2375 ps --filter \"publish=3006\" -q\\) ls /app/src/lib/ 2>&1; docker -H tcp://178.105.99.125:2375 exec $\\(docker -H tcp://178.105.99.125:2375 ps --filter \"publish=3006\" -q\\) ls /app/src/components/ 2>&1)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Haxor\\.claude\\projects\\c--Users-Haxor-Desktop-AI-Loan-App\\memory"
