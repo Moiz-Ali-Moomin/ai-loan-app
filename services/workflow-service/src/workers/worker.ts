@@ -23,7 +23,7 @@ async function ensureNamespace(address: string, namespace: string): Promise<void
     const conn = await Connection.connect({ address });
     const client = new Client({ connection: conn, namespace: 'default' });
     try {
-      await client.workflowService.registerNamespace({ namespace, workflowExecutionRetentionPeriod: { seconds: BigInt(604800) } });
+      await client.workflowService.registerNamespace({ namespace, workflowExecutionRetentionPeriod: { seconds: 604800 } });
       logger.info(`Temporal namespace '${namespace}' registered`);
     } catch (err: unknown) {
       // NamespaceAlreadyExists is expected on subsequent starts

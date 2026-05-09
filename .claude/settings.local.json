@@ -32,7 +32,9 @@
       "Bash(Select-Object -Property FullName)",
       "PowerShell(head *)",
       "Skill(session-clean)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(Select-String -Pattern \"bigint|BigInt|unknown.*loanRequestId|loanRequestId.*unknown\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\Haxor\\.claude\\projects\\c--Users-Haxor-Desktop-AI-Loan-App\\memory"

@@ -4,7 +4,7 @@
  * so K8s probes and the API gateway can inspect worker state.
  */
 import './instrumentation.js';
-import Fastify from 'fastify';
+import Fastify, { type FastifyRequest } from 'fastify';
 import { Connection, Client } from '@temporalio/client';
 import { createPool } from '@loan-platform/database';
 import { createLogger } from '@loan-platform/logger';
@@ -37,7 +37,7 @@ async function buildApiServer() {
   // ── Workflow status query ─────────────────────────────────────
   fastify.get(
     '/api/v1/workflows/:loanRequestId',
-    async (request: { params: { loanRequestId: string } }, reply) => {
+    async (request: FastifyRequest<{ Params: { loanRequestId: string } }>, reply) => {
       let connection: Awaited<ReturnType<typeof Connection.connect>> | null = null;
       try {
         connection = await Connection.connect({ address: TEMPORAL_ADDRESS });
