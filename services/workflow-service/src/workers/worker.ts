@@ -1,7 +1,7 @@
 import '../instrumentation.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { Long } from 'long';
+import Long from 'long';
 import { Worker, NativeConnection } from '@temporalio/worker';
 import { Client as MinioClient } from 'minio';
 import { createPool } from '@loan-platform/database';
