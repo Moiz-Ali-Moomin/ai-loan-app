@@ -2,6 +2,14 @@
 # AI Loan Governance Platform — Production Stack
 # Secrets are loaded from infra/docker/.env (never commit it).
 # Copy .env.example → .env and fill in real values.
+#
+# Memory budget (3.8 GB VPS):
+#   Infrastructure       ~1 150 MB
+#   Observability        ~  736 MB
+#   Application services ~  960 MB
+#   OS + Docker overhead ~  600 MB
+#   ─────────────────────────────
+#   Total                ~3 446 MB  (leaves ~380 MB headroom)
 # =============================================================
 
 networks:
@@ -30,6 +38,10 @@ services:
     image: postgres:16-alpine
     container_name: loan-postgres
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -39,8 +51,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts/postgres:/docker-entrypoint-initdb.d
       - ../../infra/postgres/migrations:/migrations:ro
-    # No host port — postgres must not be reachable from the internet.
-    # Services on the loan-platform network reach it at postgres:5432.
     expose:
       - "5432"
     healthcheck:
@@ -56,10 +66,15 @@ services:
     image: redis:7-alpine
     container_name: loan-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    # maxmemory kept below the container limit so Redis evicts keys
+    # before the OOM killer terminates the process.
+    command: redis-server --appendonly yes --maxmemory 96mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
-    # No host port — redis must not be reachable from the internet.
     expose:
       - "6379"
     healthcheck:
@@ -74,12 +89,17 @@ services:
     image: confluentinc/cp-zookeeper:7.6.1
     container_name: loan-zookeeper
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      # Keep the JVM heap well inside the container limit.
+      KAFKA_HEAP_OPTS: "-Xmx96m -Xms64m"
     volumes:
       - zookeeper_data:/var/lib/zookeeper/data
-    # Internal only — Kafka is the only consumer of Zookeeper.
     expose:
       - "2181"
     healthcheck:
@@ -94,18 +114,16 @@ services:
     image: confluentinc/cp-kafka:7.6.1
     container_name: loan-kafka
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     depends_on:
       zookeeper:
         condition: service_healthy
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      # PLAINTEXT        — internal Docker-network listener (containers → kafka:29092)
-      # PLAINTEXT_HOST   — host/external listener.
-      #                    Advertises the VPS public IP so that clients running
-      #                    outside the container network (e.g. local dev tools
-      #                    connecting to the VPS) resolve to the right address.
-      #                    All-internal stacks can change VPS_IP to localhost.
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://${VPS_IP}:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
@@ -117,10 +135,10 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       KAFKA_LOG_RETENTION_HOURS: 168
       KAFKA_LOG4J_LOGGERS: "kafka.controller=WARN,kafka.producer.async.DefaultEventHandler=WARN,state.change.logger=WARN"
+      # Heap kept well under the 512 MB container limit.
+      KAFKA_HEAP_OPTS: "-Xmx384m -Xms256m"
     volumes:
       - kafka_data:/var/lib/kafka/data
-    # 9092 is exposed for external clients (e.g. local dev tools hitting the VPS).
-    # If Kafka should be fully internal, remove the ports block and use expose only.
     ports:
       - "9092:9092"
     healthcheck:
@@ -136,6 +154,10 @@ services:
     image: provectuslabs/kafka-ui:v0.7.2
     container_name: loan-kafka-ui
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 192M
     depends_on:
       kafka:
         condition: service_healthy
@@ -144,6 +166,8 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
       SERVER_PORT: 8080
+      # Spring Boot JVM heap inside the container limit.
+      JAVA_OPTS: "-Xmx128m -Xms64m"
     ports:
       - "8090:8080"
     networks:
@@ -153,17 +177,16 @@ services:
     image: minio/minio:RELEASE.2024-05-10T01-41-38Z
     container_name: loan-minio
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
       - minio_data:/data
-    # 9000 — S3 API (used by services internally; also needed if you want to
-    #         access buckets from outside the VPS).
-    # 9001 — MinIO web console.
-    # Both are exposed here because the frontend links to the console.
-    # If you add a reverse proxy, remove these ports and proxy through Nginx.
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -178,6 +201,10 @@ services:
   minio-init:
     image: minio/mc:RELEASE.2024-05-09T17-04-24Z
     container_name: loan-minio-init
+    deploy:
+      resources:
+        limits:
+          memory: 64M
     depends_on:
       minio:
         condition: service_healthy
@@ -208,13 +235,16 @@ services:
     image: postgres:16-alpine
     container_name: loan-temporal-postgres
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
     environment:
       POSTGRES_USER: ${TEMPORAL_POSTGRES_USER}
       POSTGRES_PASSWORD: ${TEMPORAL_POSTGRES_PASSWORD}
       POSTGRES_DB: temporal
     volumes:
       - temporal_data:/var/lib/postgresql/data
-    # Internal only — only temporal reads this database.
     expose:
       - "5432"
     healthcheck:
@@ -229,6 +259,10 @@ services:
     image: temporalio/auto-setup:1.24.2
     container_name: loan-temporal
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     depends_on:
       temporal-postgres:
         condition: service_healthy
@@ -256,6 +290,10 @@ services:
     image: temporalio/ui:2.26.2
     container_name: loan-temporal-ui
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
     depends_on:
       temporal:
         condition: service_healthy
@@ -272,11 +310,13 @@ services:
   # ============================================================
 
   opa:
-    # Use the non-debug image in production to reduce attack surface.
-    # Switch to latest-debug only when actively troubleshooting policies.
     image: openpolicyagent/opa:0.65.0
     container_name: loan-opa
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 96M
     command:
       - "run"
       - "--server"
@@ -287,8 +327,6 @@ services:
       - "/policies"
     volumes:
       - ../../infra/opa/policies:/policies:ro
-    # OPA must not be reachable from the internet — policy evaluation is
-    # an internal concern.  Services call it at http://opa:8181.
     expose:
       - "8181"
     healthcheck:
@@ -308,11 +346,13 @@ services:
     image: otel/opentelemetry-collector-contrib:0.101.0
     container_name: loan-otel-collector
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 96M
     command: ["--config=/etc/otel-collector.yaml"]
     volumes:
       - ./observability/otel-collector.yaml:/etc/otel-collector.yaml:ro
-    # OTLP ports are internal only — only our own services push telemetry.
-    # Prometheus scrapes port 8889 internally too.
     expose:
       - "4317"
       - "4318"
@@ -328,11 +368,14 @@ services:
     image: grafana/loki:3.0.0
     container_name: loan-loki
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
     command: -config.file=/etc/loki/loki.yaml
     volumes:
       - ./observability/loki.yaml:/etc/loki/loki.yaml:ro
       - loki_data:/loki
-    # Internal only — Grafana queries Loki on its internal hostname.
     expose:
       - "3100"
     healthcheck:
@@ -347,11 +390,14 @@ services:
     image: grafana/tempo:2.4.2
     container_name: loan-tempo
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
     command: -config.file=/etc/tempo.yaml
     volumes:
       - ./observability/tempo.yaml:/etc/tempo.yaml:ro
       - tempo_data:/var/tempo
-    # Internal only — Grafana and the otel-collector reach Tempo by container name.
     expose:
       - "3200"
       - "4317"
@@ -367,6 +413,10 @@ services:
     image: prom/prometheus:v2.52.0
     container_name: loan-prometheus
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 192M
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
@@ -374,12 +424,11 @@ services:
       - "--web.console.templates=/etc/prometheus/consoles"
       - "--web.enable-lifecycle"
       - "--web.enable-remote-write-receiver"
-      - "--storage.tsdb.retention.time=30d"
+      - "--storage.tsdb.retention.time=15d"
     volumes:
       - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./observability/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus_data:/prometheus
-    # Internal only — Grafana queries Prometheus on its internal hostname.
     expose:
       - "9090"
     healthcheck:
@@ -394,6 +443,10 @@ services:
     image: grafana/grafana:10.4.3
     container_name: loan-grafana
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 192M
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
@@ -431,9 +484,14 @@ services:
       dockerfile: services/api-gateway/Dockerfile
     container_name: loan-api-gateway
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 192M
     environment:
       NODE_ENV: production
       PORT: 3000
+      NODE_OPTIONS: "--max-old-space-size=128"
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379
       KAFKA_BROKERS: kafka:29092
@@ -472,10 +530,15 @@ services:
       dockerfile: services/workflow-service/Dockerfile
     container_name: loan-workflow-service
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 192M
     environment:
       NODE_ENV: production
       PORT: 3001
       API_PORT: 3001
+      NODE_OPTIONS: "--max-old-space-size=128"
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       KAFKA_BROKERS: kafka:29092
       TEMPORAL_ADDRESS: temporal:7233
@@ -517,9 +580,14 @@ services:
       dockerfile: services/policy-service/Dockerfile
     container_name: loan-policy-service
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
     environment:
       NODE_ENV: production
       PORT: 3002
+      NODE_OPTIONS: "--max-old-space-size=96"
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       OPA_URL: http://opa:8181
       KAFKA_BROKERS: kafka:29092
@@ -546,9 +614,14 @@ services:
       dockerfile: services/ai-execution-service/Dockerfile
     container_name: loan-ai-service
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
     environment:
       NODE_ENV: production
       PORT: 3003
+      NODE_OPTIONS: "--max-old-space-size=96"
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       AI_MOCK_MODE: ${AI_MOCK_MODE}
@@ -582,9 +655,14 @@ services:
       dockerfile: services/audit-service/Dockerfile
     container_name: loan-audit-service
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
     environment:
       NODE_ENV: production
       PORT: 3004
+      NODE_OPTIONS: "--max-old-space-size=96"
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       KAFKA_BROKERS: kafka:29092
       MINIO_ENDPOINT: minio
@@ -614,9 +692,14 @@ services:
       dockerfile: services/event-consumer/Dockerfile
     container_name: loan-event-consumer
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
     environment:
       NODE_ENV: production
       PORT: 3005
+      NODE_OPTIONS: "--max-old-space-size=96"
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       KAFKA_BROKERS: kafka:29092
       REDIS_URL: redis://redis:6379
@@ -646,6 +729,10 @@ services:
       dockerfile: Dockerfile
     container_name: loan-frontend
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 192M
     env_file:
       - ../../frontend/.env.production
     ports:
