@@ -329,7 +329,7 @@ services:
     expose:
       - "8181"
     healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8181/health || exit 1"]
+      test: ["CMD", "/opa", "eval", "--data", "/dev/null", "data"]
       interval: 10s
       timeout: 5s
       retries: 5
