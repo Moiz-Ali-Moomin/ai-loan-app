@@ -74,7 +74,7 @@ async function run() {
     namespace: TEMPORAL_NAMESPACE,
     taskQueue: TEMPORAL_TASK_QUEUE,
     // dist/workers/worker.js → go up two levels to dist/, then into workflows/
-    workflowsPath: join(__dirname, '..', '..', 'workflows', 'loan-approval.workflow.js'),
+    workflowsPath: join(__dirname, '..', 'workflows', 'loan-approval.workflow.js'),
     activities,
     maxConcurrentActivityTaskExecutions: 20,
     maxConcurrentWorkflowTaskExecutions: 10,
