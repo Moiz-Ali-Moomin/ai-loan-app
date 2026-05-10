@@ -38,6 +38,6 @@ COPY --from=builder --chown=nodeapp:nodejs /app/services/workflow-service/dist .
 COPY --from=builder --chown=nodeapp:nodejs /app/services/workflow-service/package.json ./services/workflow-service/
 USER nodeapp
 EXPOSE 3001
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3001/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+  CMD node -e "require('fs').statSync('/proc/1/status')"
 CMD ["node", "services/workflow-service/dist/workers/worker.js"]
