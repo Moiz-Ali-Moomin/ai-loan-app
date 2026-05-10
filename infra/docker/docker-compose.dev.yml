@@ -332,9 +332,10 @@ services:
       - ../../frontend/src:/app/src
       - ../../frontend/public:/app/public
       - frontend_next_cache:/app/.next
+    env_file:
+      - ../../frontend/.env.development
     environment:
       NODE_ENV: development
-      NEXT_PUBLIC_API_URL: http://api-gateway:3000
       WATCHPACK_POLLING: "true"
     ports:
       - "3006:3000"

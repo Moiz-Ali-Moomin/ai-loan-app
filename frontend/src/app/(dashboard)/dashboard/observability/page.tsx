@@ -2,14 +2,18 @@
 
 const GRAFANA_URL = process.env.NEXT_PUBLIC_GRAFANA_URL ?? 'http://localhost:3100';
 const TEMPORAL_UI_URL = process.env.NEXT_PUBLIC_TEMPORAL_UI_URL ?? 'http://localhost:8088';
+const KAFKA_UI_URL = process.env.NEXT_PUBLIC_KAFKA_UI_URL ?? 'http://localhost:8090';
+const MINIO_URL = process.env.NEXT_PUBLIC_MINIO_URL ?? 'http://localhost:9001';
+const OPA_URL = process.env.NEXT_PUBLIC_OPA_URL ?? 'http://localhost:8181';
+const PROMETHEUS_URL = process.env.NEXT_PUBLIC_PROMETHEUS_URL ?? 'http://localhost:9091';
 
 const tools = [
   { name: 'Grafana Dashboards', description: 'Metrics, traces, and logs via LGTM stack', href: GRAFANA_URL, color: 'orange' },
   { name: 'Temporal UI', description: 'Workflow history, replays, and state inspection', href: TEMPORAL_UI_URL, color: 'blue' },
-  { name: 'Kafka UI', description: 'Topic browser, consumer groups, message inspector', href: 'http://localhost:8090', color: 'green' },
-  { name: 'MinIO Console', description: 'AI prompts, responses, and compliance artifacts', href: 'http://localhost:9001', color: 'purple' },
-  { name: 'OPA Playground', description: 'Policy evaluation and debugging', href: 'http://localhost:8181', color: 'teal' },
-  { name: 'Prometheus', description: 'Raw metrics and alerting rules', href: 'http://localhost:9091', color: 'red' },
+  { name: 'Kafka UI', description: 'Topic browser, consumer groups, message inspector', href: KAFKA_UI_URL, color: 'green' },
+  { name: 'MinIO Console', description: 'AI prompts, responses, and compliance artifacts', href: MINIO_URL, color: 'purple' },
+  { name: 'OPA Playground', description: 'Policy evaluation and debugging', href: OPA_URL, color: 'teal' },
+  { name: 'Prometheus', description: 'Raw metrics and alerting rules', href: PROMETHEUS_URL, color: 'red' },
 ];
 
 const colorMap: Record<string, string> = {

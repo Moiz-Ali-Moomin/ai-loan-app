@@ -212,7 +212,7 @@ services:
       POSTGRES_SEEDS: temporal-postgres
       ENABLE_ES: "false"
       TEMPORAL_BROADCAST_ADDRESS: "0.0.0.0"
-      TEMPORAL_CORS_ORIGINS: "http://localhost:3000"
+      TEMPORAL_CORS_ORIGINS: "http://62.238.25.225:3006"
     ports:
       - "7233:7233"
     healthcheck:
@@ -233,7 +233,7 @@ services:
         condition: service_healthy
     environment:
       TEMPORAL_ADDRESS: temporal:7233
-      TEMPORAL_CORS_ORIGINS: http://localhost:3000
+      TEMPORAL_CORS_ORIGINS: http://62.238.25.225:3006
     ports:
       - "8088:8080"
     networks:
@@ -600,10 +600,8 @@ services:
       dockerfile: Dockerfile
     container_name: loan-frontend
     restart: unless-stopped
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3000
-      NEXT_PUBLIC_TEMPORAL_UI_URL: http://localhost:8088
-      NEXT_PUBLIC_GRAFANA_URL: http://localhost:3100
+    env_file:
+      - ../../frontend/.env.production
     ports:
       - "3006:3000"
     depends_on:
