@@ -277,7 +277,7 @@ services:
     ports:
       - "7233:7233"
     healthcheck:
-      test: ["CMD-SHELL", "temporal operator cluster health --address 127.0.0.1:7233 2>/dev/null || exit 1"]
+      test: ["CMD", "temporal", "operator", "cluster", "health", "--address", "0.0.0.0:7233"]
       interval: 15s
       timeout: 10s
       retries: 30
