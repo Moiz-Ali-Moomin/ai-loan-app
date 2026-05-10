@@ -42,6 +42,12 @@ export const LoanPlatformMetrics = {
   aiRiskScoreHistogram: meter.createHistogram('ai_risk_score', {
     description: 'Distribution of AI risk scores',
   }),
+  aiConfidenceHistogram: meter.createHistogram('ai_confidence_score', {
+    description: 'Distribution of AI confidence scores — alerts when mean drops below 0.7',
+  }),
+  aiTokensUsed: meter.createCounter('ai_tokens_used_total', {
+    description: 'Total LLM tokens consumed across all decisions',
+  }),
 
   // Policy metrics
   policyEvaluationsTotal: meter.createCounter('policy_evaluations_total', {

@@ -120,20 +120,47 @@ export function createEventHandlers(_pool: Pool, redis: Redis) {
       const { payload } = envelope;
       kafkaConsumedCounter.add(1, { topic: 'ai.decisions', eventType: envelope.eventType });
 
-      aiDecisionsCounter.add(1, {
+      const labels = {
         risk_level: payload.riskLevel,
         recommendation: payload.recommendation,
         model_version: payload.modelVersion,
-      });
+      };
+
+      aiDecisionsCounter.add(1, labels);
+
+      // Record confidence distribution for model drift detection
+      if (typeof payload.confidence === 'number') {
+        LoanPlatformMetrics.aiConfidenceHistogram.record(payload.confidence, labels);
+      }
+
+      // Track token spend per model version
+      if (typeof payload.tokensUsed === 'number') {
+        LoanPlatformMetrics.aiTokensUsed.add(payload.tokensUsed, { model_version: payload.modelVersion });
+      }
+
+      // Record latency if available
+      if (typeof payload.latencyMs === 'number') {
+        LoanPlatformMetrics.aiDecisionLatency.record(payload.latencyMs, labels);
+      }
+
+      // Risk score distribution
+      LoanPlatformMetrics.aiRiskScoreHistogram.record(payload.riskScore, labels);
 
       // Aggregate risk score metrics in Redis sorted set
       await redis.zadd(`tenant:${payload.tenantId}:risk_scores`, payload.riskScore, payload.decisionId);
       await redis.expire(`tenant:${payload.tenantId}:risk_scores`, 86400);
 
+      // Cache confidence rolling average for quick dashboard reads
+      await redis.lpush(`ai:confidence:recent`, payload.confidence ?? 0);
+      await redis.ltrim(`ai:confidence:recent`, 0, 99);  // keep last 100
+      await redis.expire(`ai:confidence:recent`, 86400);
+
       logger.info('AI decision event processed', {
         decisionId: payload.decisionId,
         riskLevel: payload.riskLevel,
         recommendation: payload.recommendation,
+        confidence: payload.confidence,
+        modelVersion: payload.modelVersion,
       });
     },
 

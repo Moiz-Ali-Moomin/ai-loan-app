@@ -81,7 +81,9 @@
       "Bash(ssh root@62.238.25.225 \"cd ~/ai-loan-app/infra/docker && docker compose stop tempo && docker compose rm -f tempo && docker volume rm docker_tempo_data 2>/dev/null || docker volume rm infra_tempo_data 2>/dev/null || \\(docker volume ls | grep tempo\\)\")",
       "Bash(ssh root@62.238.25.225 \"docker volume ls | grep tempo\")",
       "Bash(ssh root@62.238.25.225 \"cd ~/ai-loan-app/infra/docker && docker compose up -d tempo 2>&1\")",
-      "Bash(ssh root@62.238.25.225 \"sleep 20 && docker ps --format 'table {{.Names}}\\\\t{{.Status}}' | grep tempo && docker logs loan-tempo --tail=10 2>&1\")"
+      "Bash(ssh root@62.238.25.225 \"sleep 20 && docker ps --format 'table {{.Names}}\\\\t{{.Status}}' | grep tempo && docker logs loan-tempo --tail=10 2>&1\")",
+      "Bash(Get-ChildItem -Path . -Recurse -Depth 2)",
+      "Bash(git add *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Haxor\\.claude\\projects\\c--Users-Haxor-Desktop-AI-Loan-App\\memory"

@@ -11,6 +11,7 @@
     "fastify": "^4.27.0",
     "minio": "^8.0.0",
     "zod": "^3.23.8",
+    "@loan-platform/crypto": "^1.0.0",
     "@loan-platform/shared-types": "^1.0.0",
     "@loan-platform/telemetry": "^1.0.0",
     "@loan-platform/logger": "^1.0.0",

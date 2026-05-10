@@ -499,6 +499,8 @@ services:
       TEMPORAL_NAMESPACE: loan-governance
       OPA_URL: http://opa:8181
       JWT_SECRET: ${JWT_SECRET}
+      PII_ENCRYPTION_KEY: ${PII_ENCRYPTION_KEY}
+      PII_KEY_VERSION: ${PII_KEY_VERSION:-1}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       WORKFLOW_SERVICE_URL: http://workflow-service:3001
       POLICY_SERVICE_URL: http://policy-service:3002
@@ -617,18 +619,22 @@ services:
     deploy:
       resources:
         limits:
-          memory: 128M
+          memory: 256M
     environment:
       NODE_ENV: production
       PORT: 3003
       NODE_OPTIONS: "--max-old-space-size=96"
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       AI_MOCK_MODE: ${AI_MOCK_MODE}
+      AI_MODEL: ${AI_MODEL:-claude-sonnet-4-6}
+      ACTIVE_PROMPT_VERSION: ${ACTIVE_PROMPT_VERSION:-1.2.0}
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET_PROMPTS: ai-prompts
+      MINIO_BUCKET_RESPONSES: ai-responses
       KAFKA_BROKERS: kafka:29092
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     ports:
@@ -664,6 +670,7 @@ services:
       PORT: 3004
       NODE_OPTIONS: "--max-old-space-size=96"
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      AUDIT_HMAC_KEY: ${AUDIT_HMAC_KEY}
       KAFKA_BROKERS: kafka:29092
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"

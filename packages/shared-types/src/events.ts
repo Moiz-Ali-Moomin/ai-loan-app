@@ -63,6 +63,8 @@ export interface AIDecisionEvent {
   recommendation: string;
   confidence: number;
   modelVersion: string;
+  tokensUsed?: number;
+  latencyMs?: number;
   decidedAt: ISOTimestamp;
 }
 

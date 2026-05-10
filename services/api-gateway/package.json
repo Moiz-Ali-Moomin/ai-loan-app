@@ -19,6 +19,7 @@
     "@fastify/request-context": "^5.1.0",
     "@fastify/swagger": "^8.14.0",
     "@fastify/swagger-ui": "^3.0.0",
+    "@loan-platform/crypto": "^1.0.0",
     "@loan-platform/database": "^1.0.0",
     "@loan-platform/kafka": "^1.0.0",
     "@loan-platform/logger": "^1.0.0",

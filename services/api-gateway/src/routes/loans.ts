@@ -6,6 +6,7 @@ import { createLogger } from '@loan-platform/logger';
 import { withSpan } from '@loan-platform/telemetry';
 import { KafkaProducerClient } from '@loan-platform/kafka';
 import { KafkaTopic } from '@loan-platform/shared-types';
+import { encryptPII, getKeyVersion } from '@loan-platform/crypto';
 import { requireAuth, type JwtPayload } from '../middleware/auth.js';
 import { config } from '../config/index.js';
 import { loanSubmissionsTotal } from './health.js';
@@ -14,6 +15,7 @@ const logger = createLogger('api-gateway:loans');
 
 const CreateLoanRequestSchema = z.object({
   tenantId: z.string().uuid(),
+  idempotencyKey: z.string().uuid('idempotencyKey must be a UUID'),
   applicant: z.object({
     firstName: z.string().min(1),
     lastName: z.string().min(1),
@@ -60,9 +62,42 @@ export default async function loanRoutes(fastify: FastifyInstance) {
     async (request: FastifyRequest, reply: FastifyReply) => {
       return withSpan('api-gateway', 'POST /loans', { 'http.method': 'POST', 'http.route': '/loans' }, async () => {
         const body = CreateLoanRequestSchema.parse(request.body);
-        const loanRequestId = randomUUID();
         const correlationId = (request.headers['x-correlation-id'] as string) ?? randomUUID();
         const traceId = (request.headers['x-trace-id'] as string) ?? randomUUID();
+        const pool = fastify.pg;
+
+        // --- Idempotency: return cached response if key already used ---
+        const { rows: existing } = await pool.query(
+          `SELECT id, status FROM loan_requests WHERE idempotency_key = $1 LIMIT 1`,
+          [body.idempotencyKey]
+        );
+        if (existing.length > 0) {
+          const prev = existing[0] as { id: string; status: string };
+          logger.info('Idempotent loan request — returning existing', {
+            idempotencyKey: body.idempotencyKey,
+            loanRequestId: prev.id,
+          });
+          return reply.status(200).send({
+            success: true,
+            data: {
+              loanRequestId: prev.id,
+              workflowId: `loan-${prev.id}`,
+              status: prev.status,
+              message: 'Loan application already submitted (idempotent)',
+            },
+            meta: { traceId, requestId: request.id, timestamp: new Date().toISOString() },
+          });
+        }
+
+        // --- Encrypt PII fields before persistence ---
+        const keyVersion = getKeyVersion();
+        const encFirstName  = encryptPII(body.applicant.firstName);
+        const encLastName   = encryptPII(body.applicant.lastName);
+        const encPhone      = encryptPII(body.applicant.phone);
+        const encNationalId = encryptPII(body.applicant.nationalId);
+        const encAddress    = encryptPII(JSON.stringify(body.applicant.address));
+
+        const loanRequestId = randomUUID();
 
         loanSubmissionsTotal.inc({ loan_type: body.loanType, tenant_id: body.tenantId });
 
@@ -74,8 +109,7 @@ export default async function loanRoutes(fastify: FastifyInstance) {
           correlationId,
         });
 
-        // Persist to DB
-        const pool = fastify.pg;
+        // Persist to DB — PII columns hold encrypted envelopes
         await pool.query(
           `INSERT INTO loan_requests (
             id, tenant_id, status, loan_type, requested_amount, requested_term_months,
@@ -83,8 +117,9 @@ export default async function loanRoutes(fastify: FastifyInstance) {
             applicant_email, applicant_phone, applicant_date_of_birth, applicant_national_id,
             applicant_employment_status, applicant_annual_income, applicant_credit_score,
             applicant_existing_debt, applicant_kyc_verified, applicant_address,
-            business_info, collateral, metadata
-          ) VALUES ($1,$2,'PENDING',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)`,
+            applicant_address_enc, business_info, collateral, metadata,
+            idempotency_key, pii_key_version
+          ) VALUES ($1,$2,'PENDING',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)`,
           [
             loanRequestId,
             body.tenantId,
@@ -92,22 +127,25 @@ export default async function loanRoutes(fastify: FastifyInstance) {
             body.requestedAmount,
             body.requestedTermMonths,
             body.purpose,
-            randomUUID(), // applicant_id
-            body.applicant.firstName,
-            body.applicant.lastName,
-            body.applicant.email,
-            body.applicant.phone,
+            randomUUID(),
+            encFirstName,
+            encLastName,
+            body.applicant.email,       // email not encrypted — used for notifications
+            encPhone,
             body.applicant.dateOfBirth,
-            body.applicant.nationalId,
+            encNationalId,
             body.applicant.employmentStatus,
             body.applicant.annualIncome,
             body.applicant.creditScore,
             body.applicant.existingDebt,
             body.applicant.kycVerified,
-            JSON.stringify(body.applicant.address),
+            JSON.stringify(body.applicant.address), // plaintext copy for workflow (will be removed after migration)
+            encAddress,                 // encrypted copy — canonical after migration complete
             body.businessInfo ? JSON.stringify(body.businessInfo) : null,
             body.collateral ? JSON.stringify(body.collateral) : null,
             JSON.stringify({ correlationId, traceId }),
+            body.idempotencyKey,
+            keyVersion,
           ]
         );
 
@@ -126,7 +164,6 @@ export default async function loanRoutes(fastify: FastifyInstance) {
           }],
         });
 
-        // Persist workflow run so worker activities can find it by temporal_workflow_id
         await pool.query(
           `INSERT INTO workflow_runs
              (id, tenant_id, loan_request_id, temporal_workflow_id, temporal_run_id,
@@ -142,7 +179,6 @@ export default async function loanRoutes(fastify: FastifyInstance) {
           ]
         );
 
-        // Publish event
         const producer = fastify.kafkaProducer as KafkaProducerClient;
         await producer.publish(
           KafkaTopic.LOAN_REQUESTS,
@@ -168,11 +204,7 @@ export default async function loanRoutes(fastify: FastifyInstance) {
             status: 'PENDING',
             message: 'Loan application submitted and workflow started',
           },
-          meta: {
-            traceId,
-            requestId: request.id,
-            timestamp: new Date().toISOString(),
-          },
+          meta: { traceId, requestId: request.id, timestamp: new Date().toISOString() },
         });
       });
     }
@@ -230,8 +262,8 @@ export default async function loanRoutes(fastify: FastifyInstance) {
 
       const { rows } = await pool.query(
         `SELECT lr.id, lr.tenant_id, lr.status, lr.loan_type, lr.requested_amount,
-                lr.applicant_first_name, lr.applicant_last_name, lr.applicant_email,
-                lr.submitted_at, wr.status as workflow_status, wr.current_step
+                lr.applicant_email, lr.submitted_at,
+                wr.status as workflow_status, wr.current_step
          FROM loan_requests lr
          LEFT JOIN workflow_runs wr ON wr.loan_request_id = lr.id
          ${where}
@@ -317,6 +349,110 @@ export default async function loanRoutes(fastify: FastifyInstance) {
         [request.params.id]
       );
       return reply.send({ success: true, data: rows });
+    }
+  );
+
+  // Generate FCRA adverse action notice for denied loans
+  fastify.get<{ Params: { id: string } }>(
+    '/loans/:id/adverse-action-notice',
+    { preHandler: [requireAuth] },
+    async (request, reply) => {
+      const { id } = request.params;
+      const pool = fastify.pg;
+
+      const { rows: decisionRows } = await pool.query(
+        `SELECT ld.status, ld.rejection_reason, ld.decided_at,
+                ad.reasoning_factors, ad.risk_factors,
+                pe.violations, pe.flags,
+                lr.applicant_email, lr.loan_type, lr.requested_amount
+         FROM loan_decisions ld
+         JOIN loan_requests lr ON lr.id = ld.loan_request_id
+         LEFT JOIN ai_decisions ad ON ad.loan_request_id = ld.loan_request_id
+         LEFT JOIN policy_evaluations pe ON pe.loan_request_id = ld.loan_request_id
+         WHERE ld.loan_request_id = $1
+         ORDER BY ld.decided_at DESC LIMIT 1`,
+        [id]
+      );
+
+      if (decisionRows.length === 0) {
+        return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'Decision not found' } });
+      }
+
+      const decision = decisionRows[0] as Record<string, unknown>;
+
+      if (decision['status'] !== 'REJECTED') {
+        return reply.status(400).send({
+          success: false,
+          error: { code: 'NOT_APPLICABLE', message: 'Adverse action notice only applies to rejected applications' },
+        });
+      }
+
+      // Build FCRA-compliant adverse action reasons from AI reasoning_factors + policy violations
+      const reasoningFactors = (decision['reasoning_factors'] ?? decision['risk_factors'] ?? []) as Array<Record<string, unknown>>;
+      const violations = (decision['violations'] ?? []) as Array<Record<string, unknown>>;
+
+      const reasons: string[] = [];
+
+      // Top negative AI factors (max 4 — FCRA allows up to 4 principal reasons)
+      const negativeFactors = reasoningFactors
+        .filter((f) => f['impact'] === 'NEGATIVE')
+        .sort((a, b) => Number(b['weight'] ?? 0) - Number(a['weight'] ?? 0))
+        .slice(0, 4);
+
+      for (const factor of negativeFactors) {
+        reasons.push(String(factor['description'] ?? factor['factor']));
+      }
+
+      // Policy hard violations
+      for (const v of violations) {
+        if (v['severity'] === 'HARD' && reasons.length < 4) {
+          reasons.push(String(v['message'] ?? v['rule']));
+        }
+      }
+
+      const decidedAt = new Date(String(decision['decided_at']));
+      const deadlineAt = new Date(decidedAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+      // Record notice generation
+      await pool.query(
+        `INSERT INTO adverse_action_notices
+           (loan_request_id, tenant_id, deadline_at, delivery_method, reasons)
+         SELECT $1, lr.tenant_id, $2, 'DOWNLOAD', $3::jsonb
+         FROM loan_requests lr WHERE lr.id = $1
+         ON CONFLICT DO NOTHING`,
+        [id, deadlineAt.toISOString(), JSON.stringify(reasons)]
+      );
+
+      return reply.send({
+        success: true,
+        data: {
+          loanRequestId: id,
+          applicantEmail: decision['applicant_email'],
+          loanType: decision['loan_type'],
+          requestedAmount: decision['requested_amount'],
+          decisionDate: decision['decided_at'],
+          deadlineDate: deadlineAt.toISOString(),
+          principalReasons: reasons,
+          regulatoryBasis: 'Fair Credit Reporting Act (FCRA) Section 615(a)',
+          notice: [
+            'ADVERSE ACTION NOTICE',
+            '',
+            `We regret to inform you that your ${String(decision['loan_type'])} loan application`,
+            `for $${Number(decision['requested_amount']).toLocaleString()} has been declined.`,
+            '',
+            'Principal reasons for this decision:',
+            ...reasons.map((r, i) => `  ${i + 1}. ${r}`),
+            '',
+            'You have the right to obtain a free copy of your credit report within 60 days.',
+            'You have the right to dispute the accuracy of information in your credit report.',
+            '',
+            `Decision date: ${decidedAt.toDateString()}`,
+            `Notice deadline: ${deadlineAt.toDateString()}`,
+            '',
+            'This notice is provided in accordance with the Fair Credit Reporting Act.',
+          ].join('\n'),
+        },
+      });
     }
   );
 }

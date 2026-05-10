@@ -7,6 +7,7 @@ import { KafkaProducerClient } from '@loan-platform/kafka';
 import { KafkaTopic } from '@loan-platform/shared-types';
 import type { AIDecisionRequest } from '@loan-platform/shared-types';
 import { mockLLMAnalyze } from '../llm/mock-llm.js';
+import { claudeAnalyze } from '../llm/claude-analyzer.js';
 import { PromptManager } from '../prompts/prompt-manager.js';
 
 const logger = createLogger('ai-execution:routes');
@@ -22,7 +23,6 @@ export default async function aiRoutes(fastify: FastifyInstance) {
 
   const promptManager = new PromptManager(minioClient);
 
-  // AI Risk Analysis endpoint
   fastify.post(
     '/ai/analyze',
     async (request: FastifyRequest, reply: FastifyReply) => {
@@ -35,7 +35,6 @@ export default async function aiRoutes(fastify: FastifyInstance) {
         const decisionId = randomUUID();
         const start = Date.now();
 
-        // Build and store prompt
         const prompt = promptManager.buildPrompt(promptVersion, {
           creditScore: body.applicantProfile.creditScore,
           annualIncome: body.applicantProfile.annualIncome,
@@ -54,35 +53,50 @@ export default async function aiRoutes(fastify: FastifyInstance) {
 
         const promptStorageKey = await promptManager.storePrompt(promptVersion, prompt, body.loanRequestId);
 
-        // Run analysis (mock or real LLM)
-        const isMockMode = process.env['AI_MOCK_MODE'] !== 'false';
-        const analysis = isMockMode
-          ? await mockLLMAnalyze(body, promptVersion)
-          : await mockLLMAnalyze(body, promptVersion); // swap with openai call in prod
+        // Use real Claude when ANTHROPIC_API_KEY is set and AI_MOCK_MODE is not 'true'
+        const useMock = process.env['AI_MOCK_MODE'] === 'true' || !process.env['ANTHROPIC_API_KEY'];
 
-        const responseStorageKey = await promptManager.storeResponse({ analysis, prompt }, body.loanRequestId);
+        const analysis = useMock
+          ? await mockLLMAnalyze(body, promptVersion)
+          : await claudeAnalyze(body, prompt);
+
+        const responseStorageKey = await promptManager.storeResponse(
+          { analysis, prompt, model: 'modelVersion' in analysis ? analysis.modelVersion : 'mock-v1' },
+          body.loanRequestId
+        );
 
         const latencyMs = Date.now() - start;
 
-        // Persist to DB
         const pool = fastify.pg;
-        const riskLevel = analysis.riskScore > 0.75 ? 'CRITICAL' : analysis.riskScore > 0.55 ? 'HIGH' : analysis.riskScore > 0.35 ? 'MEDIUM' : 'LOW';
+        const riskLevel = analysis.riskScore > 0.75 ? 'CRITICAL'
+          : analysis.riskScore > 0.55 ? 'HIGH'
+          : analysis.riskScore > 0.35 ? 'MEDIUM'
+          : 'LOW';
+
+        const modelVersion = 'modelVersion' in analysis
+          ? (analysis as { modelVersion: string }).modelVersion
+          : (process.env['AI_MODEL'] ?? 'mock-v1');
 
         await pool.query(
-          `INSERT INTO ai_decisions (id, loan_request_id, tenant_id, risk_score, risk_level, recommendation, confidence, reasoning, risk_factors, suggested_terms, model_version, prompt_version, prompt_storage_key, response_storage_key, tokens_used, latency_ms)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+          `INSERT INTO ai_decisions (
+             id, loan_request_id, tenant_id, risk_score, risk_level, recommendation,
+             confidence, reasoning, risk_factors, reasoning_factors, suggested_terms,
+             model_version, prompt_version, prompt_storage_key, response_storage_key,
+             tokens_used, latency_ms
+           ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
           [
             decisionId,
             body.loanRequestId,
-            'system', // tenantId injected by workflow via header in production
+            'system',
             analysis.riskScore,
             riskLevel,
             analysis.recommendation,
             analysis.confidence,
             analysis.reasoning,
             JSON.stringify(analysis.riskFactors),
+            JSON.stringify(analysis.riskFactors), // reasoning_factors mirrors risk_factors (Claude returns structured)
             analysis.suggestedTerms ? JSON.stringify(analysis.suggestedTerms) : null,
-            process.env['AI_MODEL'] ?? 'mock-v1',
+            modelVersion,
             promptVersion,
             promptStorageKey,
             responseStorageKey,
@@ -91,7 +105,6 @@ export default async function aiRoutes(fastify: FastifyInstance) {
           ]
         );
 
-        // Publish AI decision event
         const producer = fastify.kafkaProducer as KafkaProducerClient;
         await producer.publish(
           KafkaTopic.AI_DECISIONS,
@@ -104,7 +117,9 @@ export default async function aiRoutes(fastify: FastifyInstance) {
             riskLevel,
             recommendation: analysis.recommendation,
             confidence: analysis.confidence,
-            modelVersion: process.env['AI_MODEL'] ?? 'mock-v1',
+            modelVersion,
+            tokensUsed: analysis.tokensUsed,
+            latencyMs,
             decidedAt: new Date().toISOString(),
           },
           { tenantId: 'system', correlationId, source: 'ai-execution-service' }
@@ -118,6 +133,8 @@ export default async function aiRoutes(fastify: FastifyInstance) {
           recommendation: analysis.recommendation,
           latencyMs,
           traceId,
+          usedMock: useMock,
+          modelVersion,
         });
 
         return reply.send({
@@ -132,7 +149,7 @@ export default async function aiRoutes(fastify: FastifyInstance) {
             reasoning: analysis.reasoning,
             riskFactors: analysis.riskFactors,
             suggestedTerms: analysis.suggestedTerms,
-            modelVersion: process.env['AI_MODEL'] ?? 'mock-v1',
+            modelVersion,
             promptVersion,
             promptStorageKey,
             responseStorageKey,
@@ -145,7 +162,6 @@ export default async function aiRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // Get AI decision by loan request
   fastify.get(
     '/ai/decisions/:loanRequestId',
     async (request: FastifyRequest<{ Params: { loanRequestId: string } }>, reply: FastifyReply) => {
@@ -158,16 +174,42 @@ export default async function aiRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // List recent decisions with metrics
   fastify.get(
     '/ai/decisions',
     async (request: FastifyRequest<{ Querystring: { limit?: number } }>, reply: FastifyReply) => {
       const limit = request.query.limit ?? 50;
       const pool = fastify.pg;
       const { rows } = await pool.query(
-        `SELECT id, loan_request_id, risk_score, risk_level, recommendation, confidence, model_version, prompt_version, latency_ms, decided_at
+        `SELECT id, loan_request_id, risk_score, risk_level, recommendation, confidence,
+                model_version, prompt_version, latency_ms, decided_at
          FROM ai_decisions ORDER BY decided_at DESC LIMIT $1`,
         [limit]
+      );
+      return reply.send({ success: true, data: rows });
+    }
+  );
+
+  // Confidence metrics endpoint for Prometheus scraping
+  fastify.get(
+    '/ai/metrics/confidence',
+    async (_request: FastifyRequest, reply: FastifyReply) => {
+      const pool = fastify.pg;
+      const { rows } = await pool.query(
+        `SELECT
+           model_version,
+           COUNT(*)::int                               AS total_decisions,
+           ROUND(AVG(confidence)::numeric, 4)          AS avg_confidence,
+           ROUND(MIN(confidence)::numeric, 4)          AS min_confidence,
+           ROUND(MAX(confidence)::numeric, 4)          AS max_confidence,
+           ROUND(AVG(risk_score)::numeric, 4)          AS avg_risk_score,
+           ROUND(AVG(latency_ms)::numeric, 0)          AS avg_latency_ms,
+           SUM(tokens_used)::int                       AS total_tokens_used,
+           COUNT(*) FILTER (WHERE recommendation = 'APPROVE')::int   AS approvals,
+           COUNT(*) FILTER (WHERE recommendation = 'REJECT')::int    AS rejections,
+           COUNT(*) FILTER (WHERE recommendation = 'MANUAL_REVIEW')::int AS manual_reviews
+         FROM ai_decisions
+         WHERE decided_at > NOW() - INTERVAL '24 hours'
+         GROUP BY model_version`
       );
       return reply.send({ success: true, data: rows });
     }
