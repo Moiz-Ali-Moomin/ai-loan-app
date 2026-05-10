@@ -83,7 +83,23 @@
       "Bash(ssh root@62.238.25.225 \"cd ~/ai-loan-app/infra/docker && docker compose up -d tempo 2>&1\")",
       "Bash(ssh root@62.238.25.225 \"sleep 20 && docker ps --format 'table {{.Names}}\\\\t{{.Status}}' | grep tempo && docker logs loan-tempo --tail=10 2>&1\")",
       "Bash(Get-ChildItem -Path . -Recurse -Depth 2)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(ssh root@62.238.25.225 \"node -e \\\\\"console.log\\(require\\('crypto'\\).randomBytes\\(32\\).toString\\('base64'\\)\\)\\\\\" && echo '---' && node -e \\\\\"console.log\\(require\\('crypto'\\).randomBytes\\(32\\).toString\\('base64'\\)\\)\\\\\"\")",
+      "Bash(scp -r \"c:/Users/Haxor/Desktop/AI Loan App/packages/crypto\" root@62.238.25.225:~/ai-loan-app/packages/)",
+      "Bash(scp \"c:/Users/Haxor/Desktop/AI Loan App/packages/shared-types/src/events.ts\" root@62.238.25.225:~/ai-loan-app/packages/shared-types/src/events.ts)",
+      "Bash(scp \"c:/Users/Haxor/Desktop/AI Loan App/packages/telemetry/src/metrics-registry.ts\" root@62.238.25.225:~/ai-loan-app/packages/telemetry/src/metrics-registry.ts)",
+      "Bash(scp \"c:/Users/Haxor/Desktop/AI Loan App/services/ai-execution-service/package.json\" root@62.238.25.225:~/ai-loan-app/services/ai-execution-service/package.json)",
+      "Bash(scp \"c:/Users/Haxor/Desktop/AI Loan App/services/ai-execution-service/src/llm/claude-analyzer.ts\" root@62.238.25.225:~/ai-loan-app/services/ai-execution-service/src/llm/claude-analyzer.ts)",
+      "Bash(ssh root@62.238.25.225 \"grep -c 'PII_ENCRYPTION_KEY\\\\|AUDIT_HMAC_KEY\\\\|ANTHROPIC_API_KEY' ~/ai-loan-app/infra/docker/.env 2>/dev/null || echo 'Keys not in .env yet'\")",
+      "Bash(ssh root@62.238.25.225 \"docker exec loan-postgres psql -U loanapp -d loandb -f /dev/stdin < ~/ai-loan-app/infra/postgres/migrations/004_pii_encryption_and_idempotency.sql 2>&1\")",
+      "Bash(ssh root@62.238.25.225 \"docker exec loan-postgres psql -U loanapp -d loandb -c '\\\\d loan_requests' 2>&1 | grep -E 'idempotency|pii_key|address_enc' && echo '---' && docker exec loan-postgres psql -U loanapp -d loandb -c '\\\\dt adverse_action_notices' 2>&1\")",
+      "Bash(ssh root@62.238.25.225 \"docker exec loan-postgres psql -U loanapp -d loandb -c \\\\\"SELECT column_name FROM information_schema.columns WHERE table_name = 'loan_requests' AND column_name IN \\('idempotency_key','pii_key_version','applicant_address_enc'\\);\\\\\" 2>&1 && docker exec loan-postgres psql -U loanapp -d loandb -c \\\\\"SELECT table_name FROM information_schema.tables WHERE table_name = 'adverse_action_notices';\\\\\" 2>&1\")",
+      "Bash(ssh root@62.238.25.225 \"docker cp ~/ai-loan-app/infra/postgres/migrations/004_pii_encryption_and_idempotency.sql loan-postgres:/tmp/004.sql && docker exec loan-postgres psql -U loanapp -d loandb -f /tmp/004.sql 2>&1\")",
+      "Bash(ssh root@62.238.25.225 \"cd ~/ai-loan-app/infra/docker && docker compose build api-gateway audit-service ai-execution-service event-consumer 2>&1\")",
+      "Bash(scp \"c:/Users/Haxor/Desktop/AI Loan App/services/audit-service/Dockerfile\" root@62.238.25.225:~/ai-loan-app/services/audit-service/Dockerfile)",
+      "Bash(scp \"c:/Users/Haxor/Desktop/AI Loan App/services/api-gateway/Dockerfile\" root@62.238.25.225:~/ai-loan-app/services/api-gateway/Dockerfile)",
+      "Bash(scp \"c:/Users/Haxor/Desktop/AI Loan App/services/ai-execution-service/Dockerfile\" root@62.238.25.225:~/ai-loan-app/services/ai-execution-service/Dockerfile)",
+      "Bash(scp \"c:/Users/Haxor/Desktop/AI Loan App/services/event-consumer/Dockerfile\" root@62.238.25.225:~/ai-loan-app/services/event-consumer/Dockerfile)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Haxor\\.claude\\projects\\c--Users-Haxor-Desktop-AI-Loan-App\\memory"

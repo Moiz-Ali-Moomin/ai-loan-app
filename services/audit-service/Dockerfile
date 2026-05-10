@@ -8,6 +8,7 @@ COPY packages/telemetry/package.json ./packages/telemetry/
 COPY packages/logger/package.json ./packages/logger/
 COPY packages/database/package.json ./packages/database/
 COPY packages/kafka/package.json ./packages/kafka/
+COPY packages/crypto/package.json ./packages/crypto/
 COPY services/audit-service/package.json ./services/audit-service/
 RUN npm install --workspaces --include-workspace-root
 
@@ -18,7 +19,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY tsconfig.base.json ./
 COPY packages ./packages
 COPY services/audit-service ./services/audit-service
-RUN npm run build -w packages/shared-types && npm run build -w packages/telemetry && npm run build -w packages/logger && npm run build -w packages/database && npm run build -w packages/kafka && npm run build -w services/audit-service
+RUN npm run build -w packages/shared-types && npm run build -w packages/telemetry && npm run build -w packages/logger && npm run build -w packages/database && npm run build -w packages/kafka && npm run build -w packages/crypto && npm run build -w services/audit-service
 
 FROM base AS runner
 ENV NODE_ENV=production

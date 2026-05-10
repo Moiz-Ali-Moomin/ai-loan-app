@@ -8,6 +8,7 @@ COPY packages/telemetry/package.json ./packages/telemetry/
 COPY packages/logger/package.json ./packages/logger/
 COPY packages/database/package.json ./packages/database/
 COPY packages/kafka/package.json ./packages/kafka/
+COPY packages/crypto/package.json ./packages/crypto/
 COPY services/api-gateway/package.json ./services/api-gateway/
 RUN npm install --workspaces --include-workspace-root
 
@@ -24,6 +25,7 @@ RUN npm run build -w packages/telemetry
 RUN npm run build -w packages/logger
 RUN npm run build -w packages/database
 RUN npm run build -w packages/kafka
+RUN npm run build -w packages/crypto
 RUN npm run build -w services/api-gateway
 
 FROM base AS runner

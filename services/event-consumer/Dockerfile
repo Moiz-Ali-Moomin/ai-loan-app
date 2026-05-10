@@ -8,6 +8,7 @@ COPY packages/telemetry/package.json ./packages/telemetry/
 COPY packages/logger/package.json ./packages/logger/
 COPY packages/database/package.json ./packages/database/
 COPY packages/kafka/package.json ./packages/kafka/
+COPY packages/crypto/package.json ./packages/crypto/
 COPY services/event-consumer/package.json ./services/event-consumer/
 RUN npm install --workspaces --include-workspace-root
 
