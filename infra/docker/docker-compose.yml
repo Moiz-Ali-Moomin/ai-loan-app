@@ -329,7 +329,7 @@ services:
     expose:
       - "8181"
     healthcheck:
-      test: ["CMD", "/opa", "eval", "--data", "/dev/null", "data"]
+      test: ["CMD", "/opa", "eval", "-d", "/dev/null", "--fail-defined", "data.health"]
       interval: 10s
       timeout: 5s
       retries: 5
