@@ -273,9 +273,7 @@ services:
       POSTGRES_PWD: ${TEMPORAL_POSTGRES_PASSWORD}
       POSTGRES_SEEDS: temporal-postgres
       ENABLE_ES: "false"
-      TEMPORAL_BROADCAST_ADDRESS: "0.0.0.0"
       TEMPORAL_CORS_ORIGINS: "${PUBLIC_ORIGIN}:3006"
-      NUM_HISTORY_SHARDS: "1"
     ports:
       - "7233:7233"
     healthcheck:
