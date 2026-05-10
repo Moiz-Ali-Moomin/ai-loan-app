@@ -104,7 +104,17 @@
       "Bash(scp \"c:/Users/Haxor/Desktop/AI Loan App/packages/crypto/src/index.ts\" root@62.238.25.225:~/ai-loan-app/packages/crypto/src/index.ts)",
       "Bash(ssh root@62.238.25.225 \"grep -n 'TAG_LENGTH' ~/ai-loan-app/packages/crypto/src/index.ts || echo 'clean — TAG_LENGTH not present'\")",
       "Bash(ssh root@62.238.25.225 \"cd ~/ai-loan-app/infra/docker && docker compose up -d --no-deps api-gateway audit-service ai-execution-service event-consumer 2>&1\")",
-      "Bash(ssh root@62.238.25.225 \"sleep 35 && docker ps --format 'table {{.Names}}\\\\t{{.Status}}'\")"
+      "Bash(ssh root@62.238.25.225 \"sleep 35 && docker ps --format 'table {{.Names}}\\\\t{{.Status}}'\")",
+      "Bash(ssh root@62.238.25.225 \"docker logs loan-tempo --tail=50 2>&1\")",
+      "Bash(ssh root@62.238.25.225 \"docker inspect loan-tempo --format '{{json .State}}' 2>&1 | python3 -m json.tool\")",
+      "Bash(ssh root@62.238.25.225 \"docker inspect loan-tempo --format '{{json .HostConfig.HealthCheck}}' 2>&1 | python3 -m json.tool && echo '---' && docker inspect loan-tempo --format '{{json .HostConfig.RestartPolicy}}' 2>&1 | python3 -m json.tool\")",
+      "Bash(ssh root@62.238.25.225 \"docker inspect loan-tempo 2>&1 | grep -A 20 'Healthcheck\\\\|HealthCheck\\\\|RestartPolicy'\")",
+      "Bash(ssh root@62.238.25.225 \"docker stats loan-tempo --no-stream 2>&1 && echo '---' && free -m\")",
+      "Bash(scp \"c:/Users/Haxor/Desktop/AI Loan App/infra/docker/docker-compose.yml\" root@62.238.25.225:~/ai-loan-app/infra/docker/docker-compose.yml)",
+      "Bash(ssh root@62.238.25.225 \"cd ~/ai-loan-app/infra/docker && docker compose up -d --no-deps tempo 2>&1\")",
+      "Bash(ssh root@62.238.25.225 \"sleep 40 && docker ps --format 'table {{.Names}}\\\\t{{.Status}}' | grep tempo && docker stats loan-tempo --no-stream\")",
+      "Bash(ssh root@62.238.25.225 \"sleep 45 && docker ps --format 'table {{.Names}}\\\\t{{.Status}}' | grep tempo\")",
+      "Bash(ssh root@62.238.25.225 \"sleep 60 && docker ps --format 'table {{.Names}}\\\\t{{.Status}}' | grep -E 'tempo\\\\b'\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\Haxor\\.claude\\projects\\c--Users-Haxor-Desktop-AI-Loan-App\\memory"
