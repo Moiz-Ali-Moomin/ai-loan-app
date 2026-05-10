@@ -34,7 +34,7 @@ USER nextjs
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget --quiet --tries=1 --server-response --spider http://localhost:3000/ 2>&1 | grep -qE "HTTP/1\.[01] [23]" || exit 1
+  CMD wget --quiet --tries=1 --server-response --spider http://localhost:3000/dashboard 2>&1 | grep -qE "HTTP/1\.[01] [23]" || exit 1
 
 ENV HOSTNAME="0.0.0.0"
 CMD ["node", "server.js"]
