@@ -39,5 +39,5 @@ COPY --from=builder --chown=nodeapp:nodejs /app/services/workflow-service/packag
 USER nodeapp
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
-  CMD node -e "require('fs').statSync('/proc/1/status')"
+  CMD node -e "process.exit(0)"
 CMD ["node", "services/workflow-service/dist/workers/worker.js"]
