@@ -6,6 +6,8 @@ dist/
 .env
 .env.local
 .env.production
+# infra-level secrets (never commit actual values, only .env.example)
+infra/docker/.env
 coverage/
 *.tsbuildinfo
 infra/k8s/base/secrets.yaml
