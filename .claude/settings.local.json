@@ -99,7 +99,12 @@
       "Bash(scp \"c:/Users/Haxor/Desktop/AI Loan App/services/audit-service/Dockerfile\" root@62.238.25.225:~/ai-loan-app/services/audit-service/Dockerfile)",
       "Bash(scp \"c:/Users/Haxor/Desktop/AI Loan App/services/api-gateway/Dockerfile\" root@62.238.25.225:~/ai-loan-app/services/api-gateway/Dockerfile)",
       "Bash(scp \"c:/Users/Haxor/Desktop/AI Loan App/services/ai-execution-service/Dockerfile\" root@62.238.25.225:~/ai-loan-app/services/ai-execution-service/Dockerfile)",
-      "Bash(scp \"c:/Users/Haxor/Desktop/AI Loan App/services/event-consumer/Dockerfile\" root@62.238.25.225:~/ai-loan-app/services/event-consumer/Dockerfile)"
+      "Bash(scp \"c:/Users/Haxor/Desktop/AI Loan App/services/event-consumer/Dockerfile\" root@62.238.25.225:~/ai-loan-app/services/event-consumer/Dockerfile)",
+      "Bash(ssh root@62.238.25.225 \"cd ~/ai-loan-app/infra/docker && docker compose build api-gateway audit-service ai-execution-service event-consumer 2>&1 | tail -30\")",
+      "Bash(scp \"c:/Users/Haxor/Desktop/AI Loan App/packages/crypto/src/index.ts\" root@62.238.25.225:~/ai-loan-app/packages/crypto/src/index.ts)",
+      "Bash(ssh root@62.238.25.225 \"grep -n 'TAG_LENGTH' ~/ai-loan-app/packages/crypto/src/index.ts || echo 'clean — TAG_LENGTH not present'\")",
+      "Bash(ssh root@62.238.25.225 \"cd ~/ai-loan-app/infra/docker && docker compose up -d --no-deps api-gateway audit-service ai-execution-service event-consumer 2>&1\")",
+      "Bash(ssh root@62.238.25.225 \"sleep 35 && docker ps --format 'table {{.Names}}\\\\t{{.Status}}'\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\Haxor\\.claude\\projects\\c--Users-Haxor-Desktop-AI-Loan-App\\memory"

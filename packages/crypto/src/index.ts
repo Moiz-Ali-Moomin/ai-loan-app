@@ -2,9 +2,8 @@ import { createCipheriv, createDecipheriv, randomBytes, createHmac } from 'crypt
 
 // AES-256-GCM constants
 const ALGORITHM = 'aes-256-gcm';
-const IV_LENGTH = 12;      // 96-bit IV — recommended for GCM
-const TAG_LENGTH = 16;     // 128-bit auth tag
-const KEY_LENGTH = 32;     // 256-bit key
+const IV_LENGTH = 12;   // 96-bit IV — recommended for GCM
+const KEY_LENGTH = 32;  // 256-bit key
 
 // Envelope format (all base64, colon-delimited): version:keyVersion:iv:tag:ciphertext
 const ENVELOPE_VERSION = '1';
