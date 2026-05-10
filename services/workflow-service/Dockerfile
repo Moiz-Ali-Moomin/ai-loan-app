@@ -36,8 +36,10 @@ COPY --from=builder --chown=nodeapp:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodeapp:nodejs /app/packages ./packages
 COPY --from=builder --chown=nodeapp:nodejs /app/services/workflow-service/dist ./services/workflow-service/dist
 COPY --from=builder --chown=nodeapp:nodejs /app/services/workflow-service/package.json ./services/workflow-service/
+COPY --chown=nodeapp:nodejs services/workflow-service/start.sh ./services/workflow-service/start.sh
+RUN chmod +x ./services/workflow-service/start.sh
 USER nodeapp
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
-  CMD node -e "process.exit(0)"
-CMD ["node", "services/workflow-service/dist/workers/worker.js"]
+  CMD node -e "require('http').get('http://localhost:3001/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+CMD ["/bin/sh", "services/workflow-service/start.sh"]

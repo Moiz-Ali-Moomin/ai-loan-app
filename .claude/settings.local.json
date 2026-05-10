@@ -60,7 +60,24 @@
       "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\\\\frontend\\\\src\" -Recurse -File | Select-Object @{Name=\"Path\";Expression={$_.FullName}} | Format-Table -AutoSize)",
       "Bash(\\\\.config)",
       "Bash(next\\\\.config\")",
-      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\\\\frontend\" -File | Where-Object {$_.Extension -eq '.json' -or $_.Name -match 'next|tailwind|postcss'} | Select-Object Name)"
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\\\\frontend\" -File | Where-Object {$_.Extension -eq '.json' -or $_.Name -match 'next|tailwind|postcss'} | Select-Object Name)",
+      "Bash(ssh root@62.238.25.225 \"docker inspect loan-frontend --format='{{json .State.Health}}' && echo '---' && docker inspect loan-workflow-service --format='{{json .State.Health}}'\")",
+      "Bash(ssh root@62.238.25.225 \"echo '=== frontend curl ===' && curl -sv http://localhost:3006/ 2>&1 | head -30 && echo '=== workflow curl ===' && curl -sv http://localhost:3001/ 2>&1 | head -30\")",
+      "Bash(ssh root@62.238.25.225 \"echo '=== workflow-service logs ===' && docker logs loan-workflow-service --tail=50 2>&1\")",
+      "Bash(ssh root@62.238.25.225 \"docker inspect loan-workflow-service --format='{{json .Config.Healthcheck}}' && echo '---' && docker inspect loan-frontend --format='{{json .Config.Healthcheck}}'\")",
+      "Bash(ssh root@62.238.25.225 \"docker exec loan-frontend wget --quiet --tries=1 --server-response --spider http://localhost:3000/dashboard 2>&1\")",
+      "Bash(ssh root@62.238.25.225 \"cat ~/ai-loan-app/services/workflow-service/Dockerfile 2>/dev/null || find ~/ai-loan-app -name 'Dockerfile' | xargs grep -l 'workflow' 2>/dev/null\")",
+      "Bash(ssh root@62.238.25.225 \"cat ~/ai-loan-app/infra/docker/docker-compose.yml 2>/dev/null || cat ~/ai-loan-app/docker-compose.yml 2>/dev/null\")",
+      "Bash(ssh root@62.238.25.225 \"ls ~/ai-loan-app/services/workflow-service/dist/ 2>/dev/null && ls ~/ai-loan-app/services/workflow-service/src/ 2>/dev/null\")",
+      "Bash(ssh root@62.238.25.225 \"find ~/ai-loan-app/services/workflow-service -name '*.ts' | head -30\")",
+      "Bash(ssh root@62.238.25.225 \"cat ~/ai-loan-app/services/workflow-service/src/api.ts\")",
+      "Bash(ssh root@62.238.25.225 \"cat ~/ai-loan-app/services/workflow-service/src/workers/worker.ts | head -20 && echo '---' && cat ~/ai-loan-app/services/workflow-service/package.json | python3 -m json.tool 2>/dev/null | grep -A5 '\\\\\"scripts\\\\\"'\")",
+      "Bash(scp \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\\\\services\\\\workflow-service\\\\Dockerfile\" root@62.238.25.225:~/ai-loan-app/services/workflow-service/Dockerfile)",
+      "Bash(scp \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\\\\services\\\\workflow-service\\\\start.sh\" root@62.238.25.225:~/ai-loan-app/services/workflow-service/start.sh)",
+      "Bash(scp \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\\\\frontend\\\\Dockerfile\" root@62.238.25.225:~/ai-loan-app/frontend/Dockerfile)",
+      "Bash(ssh root@62.238.25.225 \"cd ~/ai-loan-app/infra/docker && docker compose build workflow-service frontend 2>&1\")",
+      "Bash(ssh root@62.238.25.225 \"cd ~/ai-loan-app/infra/docker && docker compose up -d --no-deps workflow-service frontend 2>&1\")",
+      "Bash(ssh root@62.238.25.225 \"sleep 35 && docker ps --format 'table {{.Names}}\\\\t{{.Status}}' | grep -E 'workflow|frontend'\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\Haxor\\.claude\\projects\\c--Users-Haxor-Desktop-AI-Loan-App\\memory"
