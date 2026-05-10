@@ -735,6 +735,8 @@ services:
           memory: 192M
     env_file:
       - ../../frontend/.env.production
+    environment:
+      HOSTNAME: "0.0.0.0"
     ports:
       - "3006:3000"
     depends_on:
