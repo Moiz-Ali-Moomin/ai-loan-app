@@ -70,9 +70,9 @@ export default async function policyRoutes(fastify: FastifyInstance) {
         );
       }
 
-      // Publish policy event
+      // Publish policy event — fire-and-forget; Kafka failure must not fail the HTTP response
       const producer = fastify.kafkaProducer as KafkaProducerClient;
-      await producer.publish(
+      producer.publish(
         KafkaTopic.POLICY_EVENTS,
         'POLICY_EVALUATED',
         {
@@ -87,7 +87,7 @@ export default async function policyRoutes(fastify: FastifyInstance) {
           evaluatedAt: result.evaluatedAt,
         },
         { tenantId: body.tenantId ?? 'system', correlationId, source: 'policy-service' }
-      );
+      ).catch(err => logger.error('Failed to publish policy event to Kafka', { evaluationId: result.id, err }));
 
       logger.info('Policy evaluated', {
         evaluationId: result.id,

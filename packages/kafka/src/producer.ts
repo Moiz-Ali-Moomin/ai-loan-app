@@ -13,9 +13,8 @@ export class KafkaProducerClient {
   constructor(kafka: Kafka) {
     this.producer = kafka.producer({
       allowAutoTopicCreation: false,
-      idempotent: true,
+      idempotent: false,
       maxInFlightRequests: 5,
-      transactionTimeout: 30000,
     });
   }
 
