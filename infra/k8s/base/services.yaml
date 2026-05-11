@@ -288,6 +288,87 @@ spec:
             runAsUser: 1001
             allowPrivilegeEscalation: false
 ---
+# Decision Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: decision-service
+  namespace: loan-platform
+  labels:
+    app: decision-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: decision-service
+  template:
+    metadata:
+      labels:
+        app: decision-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3007"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: loan-platform-sa
+      containers:
+        - name: decision-service
+          image: loan-platform/decision-service:latest
+          ports:
+            - containerPort: 3007
+          env:
+            - name: PORT
+              value: "3007"
+            - name: OTEL_SERVICE_NAME
+              value: "decision-service"
+            - name: REDIS_URL
+              value: "redis://redis:6379"
+            - name: TEMPORAL_ADDRESS
+              value: "temporal:7233"
+            - name: TEMPORAL_NAMESPACE
+              value: "loan-governance"
+          envFrom:
+            - configMapRef:
+                name: loan-platform-config
+            - secretRef:
+                name: loan-platform-secrets
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "384Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3007
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3007
+            initialDelaySeconds: 40
+            periodSeconds: 20
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: decision-service-service
+  namespace: loan-platform
+spec:
+  selector:
+    app: decision-service
+  ports:
+    - port: 3007
+      targetPort: 3007
+      name: http
+---
 # Frontend
 apiVersion: apps/v1
 kind: Deployment

@@ -6,6 +6,14 @@ export enum KafkaTopic {
   POLICY_EVENTS = 'policy.events',
   AI_DECISIONS = 'ai.decisions',
   AUDIT_EVENTS = 'audit.events',
+  // Decision Engine topics
+  DECISION_CREATED = 'decision.created',
+  DECISION_STARTED = 'decision.started',
+  DECISION_COMPLETED = 'decision.completed',
+  DECISION_FAILED = 'decision.failed',
+  APPROVAL_REQUESTED = 'approval.requested',
+  APPROVAL_COMPLETED = 'approval.completed',
+  FLOW_PUBLISHED = 'flow.published',
 }
 
 export interface KafkaEventEnvelope<T = unknown> {

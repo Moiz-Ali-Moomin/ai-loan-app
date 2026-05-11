@@ -783,13 +783,17 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 384M
     environment:
       NODE_ENV: production
       PORT: 3007
-      NODE_OPTIONS: "--max-old-space-size=128"
+      NODE_OPTIONS: "--max-old-space-size=192"
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       KAFKA_BROKERS: kafka:29092
+      REDIS_URL: redis://redis:6379
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_NAMESPACE: loan-governance
+      JWT_SECRET: ${JWT_SECRET}
       OPA_URL: http://opa:8181
       POLICY_SERVICE_URL: http://policy-service:3002
       AI_SERVICE_URL: http://ai-execution-service:3003
@@ -805,6 +809,10 @@ services:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      temporal:
         condition: service_healthy
       policy-service:
         condition: service_healthy

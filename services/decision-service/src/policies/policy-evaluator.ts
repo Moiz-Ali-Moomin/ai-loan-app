@@ -118,6 +118,17 @@ export class PolicyEvaluator {
     });
   }
 
+  // Public entry point for the graph engine (single-policy evaluation)
+  async evaluateSinglePolicy(
+    policyPath: string,
+    opaInput: Record<string, unknown>,
+    applicationId: string,
+    tenantId: string,
+    traceId: string,
+  ): Promise<PolicyOutcome> {
+    return this.evaluateSingle(policyPath, opaInput, applicationId, tenantId, traceId);
+  }
+
   private async evaluateSingle(
     policyPath: string,
     opaInput: Record<string, unknown>,
