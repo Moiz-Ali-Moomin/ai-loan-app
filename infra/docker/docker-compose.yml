@@ -538,6 +538,7 @@ services:
       POLICY_SERVICE_URL: http://policy-service:3002
       AI_SERVICE_URL: http://ai-execution-service:3003
       AUDIT_SERVICE_URL: http://audit-service:3004
+      DECISION_SERVICE_URL: http://decision-service:3007
     ports:
       - "3000:3000"
     depends_on:
@@ -766,6 +767,55 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3005/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - loan-platform
+
+  decision-service:
+    build:
+      context: ../..
+      dockerfile: services/decision-service/Dockerfile
+    container_name: loan-decision-service
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    environment:
+      NODE_ENV: production
+      PORT: 3007
+      NODE_OPTIONS: "--max-old-space-size=128"
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      KAFKA_BROKERS: kafka:29092
+      OPA_URL: http://opa:8181
+      POLICY_SERVICE_URL: http://policy-service:3002
+      AI_SERVICE_URL: http://ai-execution-service:3003
+      AUDIT_SERVICE_URL: http://audit-service:3004
+      FASTEMBED_URL: http://fastembed:8000
+      RAG_SIMILARITY_THRESHOLD: ${RAG_SIMILARITY_THRESHOLD:-0.72}
+      RAG_TOP_K: ${RAG_TOP_K:-8}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: decision-service
+    ports:
+      - "3007:3007"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      policy-service:
+        condition: service_healthy
+      ai-execution-service:
+        condition: service_healthy
+      audit-service:
+        condition: service_healthy
+      fastembed:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3007/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
       interval: 30s
       timeout: 10s
       retries: 5

@@ -47,6 +47,11 @@ scrape_configs:
       - targets: ['event-consumer:3005']
     metrics_path: /metrics
 
+  - job_name: decision-service
+    static_configs:
+      - targets: ['decision-service:3007']
+    metrics_path: /metrics
+
   - job_name: postgres
     static_configs:
       - targets: ['postgres:9187']
