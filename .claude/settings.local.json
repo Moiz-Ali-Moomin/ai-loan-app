@@ -184,7 +184,25 @@
       "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no -o ConnectTimeout=15 root@62.238.25.225 \"echo 'SSH OK' && uname -a && df -h / && free -h\")",
       "Bash(ssh -i C:/Users/Haxor/.ssh/id_ed25519 -o StrictHostKeyChecking=no root@62.238.25.225 ' *)",
       "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no root@62.238.25.225 \"ls -la /root/ai-loan-app/ && find /root/ai-loan-app -name 'docker-compose*.yml' 2>/dev/null\")",
-      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no root@62.238.25.225 \"docker ps -a --format 'table {{.Names}}\\\\t{{.Image}}\\\\t{{.Status}}'\")"
+      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no root@62.238.25.225 \"docker ps -a --format 'table {{.Names}}\\\\t{{.Image}}\\\\t{{.Status}}'\")",
+      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no root@62.238.25.225 \"grep -E 'OPENAI|EMBEDDING|RAG_|ANTHROPIC' /root/ai-loan-app/infra/docker/.env 2>/dev/null || echo 'not set'\")",
+      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no root@62.238.25.225 \"cat /root/ai-loan-app/infra/docker/.env\")",
+      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no -T root@62.238.25.225)",
+      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no -o BatchMode=yes root@62.238.25.225 \"tail -20 /root/ai-loan-app/infra/docker/.env\")",
+      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no -o BatchMode=yes root@62.238.25.225 \"docker exec loan-postgres psql -U loanapp -d loandb -c 'SELECT COUNT\\(*\\) FROM loan_requests;' 2>&1\")",
+      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no -o BatchMode=yes root@62.238.25.225 \"docker exec loan-postgres psql -U loanapp -d loandb -c 'SELECT extname FROM pg_extension ORDER BY extname;' 2>&1\")",
+      "Bash(ssh -i C:/Users/Haxor/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o BatchMode=yes root@62.238.25.225 ' *)",
+      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no -o BatchMode=yes root@62.238.25.225 \"docker exec -i loan-postgres psql -U loanapp -d loandb < /root/ai-loan-app/infra/postgres/migrations/003_audit_partition_extension.sql 2>&1 | tail -5 && echo DONE_003\")",
+      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no -o BatchMode=yes root@62.238.25.225 \"docker exec -i loan-postgres psql -U loanapp -d loandb < /root/ai-loan-app/infra/postgres/migrations/004_pii_encryption_and_idempotency.sql 2>&1 | tail -5 && echo DONE_004\")",
+      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no -o BatchMode=yes root@62.238.25.225 \"docker exec -i loan-postgres psql -U loanapp -d loandb < /root/ai-loan-app/infra/postgres/migrations/005_pgvector_rag.sql 2>&1 && echo DONE_005\")",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no -o BatchMode=yes root@62.238.25.225 \"cd /root/ai-loan-app && git pull origin main 2>&1 | tail -5\")",
+      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no -o BatchMode=yes root@62.238.25.225 \"cd /root/ai-loan-app && git pull origin main 2>&1 | tail -8\")",
+      "Bash(ssh root@62.238.25.225 \"cd /opt/ai-loan-app && git pull origin main\")",
+      "Bash(ssh root@62.238.25.225 \"find / -name 'docker-compose.yml' -path '*/ai-loan*' 2>/dev/null | head -5; ls /root/ 2>/dev/null | head -20\")",
+      "Bash(ssh root@62.238.25.225 \"cd /root/ai-loan-app && git pull origin main 2>&1\")",
+      "Bash(ssh root@62.238.25.225 \"cd /root/ai-loan-app/infra/docker && docker compose build ai-execution-service 2>&1\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\Haxor\\.claude\\projects\\c--Users-Haxor-Desktop-AI-Loan-App\\memory"
