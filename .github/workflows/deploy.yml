@@ -1,0 +1,256 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: ["main"]
+
+# Only one deploy runs at a time; queued runs wait rather than cancel
+# so we never leave the VPS in a partially-deployed state.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2   # needed for git diff to detect changed services
+
+      # ── Detect which application services changed ─────────────
+      # Infrastructure changes (docker-compose, fastembed, migrations)
+      # always trigger a full redeploy of the app tier.
+      - name: Detect changed services
+        id: changes
+        run: |
+          BASE=$(git rev-parse HEAD~1)
+          HEAD=$(git rev-parse HEAD)
+
+          changed() {
+            git diff --name-only "$BASE" "$HEAD" | grep -q "^$1" && echo "true" || echo "false"
+          }
+
+          echo "infra=$(    changed 'infra/'           )" >> "$GITHUB_OUTPUT"
+          echo "packages=$( changed 'packages/'        )" >> "$GITHUB_OUTPUT"
+          echo "gateway=$(  changed 'services/api-gateway'       )" >> "$GITHUB_OUTPUT"
+          echo "workflow=$( changed 'services/workflow-service'  )" >> "$GITHUB_OUTPUT"
+          echo "policy=$(   changed 'services/policy-service'    )" >> "$GITHUB_OUTPUT"
+          echo "ai=$(       changed 'services/ai-execution-service' )" >> "$GITHUB_OUTPUT"
+          echo "audit=$(    changed 'services/audit-service'     )" >> "$GITHUB_OUTPUT"
+          echo "events=$(   changed 'services/event-consumer'    )" >> "$GITHUB_OUTPUT"
+
+      # ── Write the production .env on the VPS ─────────────────
+      # All secrets come from the GitHub Actions "production" environment.
+      # The file is written atomically via a temp file + mv so a partial
+      # write never leaves the VPS with a broken .env.
+      - name: Write .env on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cat > /root/ai-loan-app/infra/docker/.env.tmp << 'ENVEOF'
+            NODE_ENV=production
+            VPS_IP=${{ secrets.VPS_HOST }}
+            PUBLIC_ORIGIN=http://${{ secrets.VPS_HOST }}
+
+            # PostgreSQL
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+
+            # Temporal PostgreSQL
+            TEMPORAL_POSTGRES_USER=${{ secrets.TEMPORAL_POSTGRES_USER }}
+            TEMPORAL_POSTGRES_PASSWORD=${{ secrets.TEMPORAL_POSTGRES_PASSWORD }}
+
+            # Redis
+            REDIS_URL=redis://redis:6379
+
+            # JWT & Crypto
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            PII_ENCRYPTION_KEY=${{ secrets.PII_ENCRYPTION_KEY }}
+            PII_KEY_VERSION=1
+
+            # Audit
+            AUDIT_HMAC_KEY=${{ secrets.AUDIT_HMAC_KEY }}
+
+            # MinIO
+            MINIO_ROOT_USER=${{ secrets.MINIO_ROOT_USER }}
+            MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD }}
+
+            # AI / Anthropic
+            ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+            AI_MODEL=claude-sonnet-4-6
+            AI_MOCK_MODE=false
+            ACTIVE_PROMPT_VERSION=1.2.0
+
+            # Embedding
+            EMBEDDING_PROVIDER=local
+            EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
+            EMBEDDING_DIMENSIONS=384
+            EMBEDDING_BATCH_SIZE=32
+            EMBEDDING_TIMEOUT_MS=30000
+            FASTEMBED_MODEL=BAAI/bge-small-en-v1.5
+
+            # OpenAI (only required when EMBEDDING_PROVIDER=openai)
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+
+            # RAG
+            RAG_SIMILARITY_THRESHOLD=0.72
+            RAG_TOP_K=8
+            RAG_MAX_CONTEXT_TOKENS=6000
+
+            # Grafana
+            GRAFANA_ADMIN_USER=${{ secrets.GRAFANA_ADMIN_USER }}
+            GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+            ENVEOF
+            mv /root/ai-loan-app/infra/docker/.env.tmp /root/ai-loan-app/infra/docker/.env
+
+      # ── Pull latest code ──────────────────────────────────────
+      - name: Pull code on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /root/ai-loan-app
+            git fetch origin main
+            git reset --hard origin/main
+
+      # ── Rebuild images that changed ───────────────────────────
+      # Packages are shared — if any package changed we rebuild everything.
+      - name: Rebuild changed images
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          INFRA:     ${{ steps.changes.outputs.infra }}
+          PACKAGES:  ${{ steps.changes.outputs.packages }}
+          GATEWAY:   ${{ steps.changes.outputs.gateway }}
+          WORKFLOW:  ${{ steps.changes.outputs.workflow }}
+          POLICY:    ${{ steps.changes.outputs.policy }}
+          AI:        ${{ steps.changes.outputs.ai }}
+          AUDIT:     ${{ steps.changes.outputs.audit }}
+          EVENTS:    ${{ steps.changes.outputs.events }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: INFRA,PACKAGES,GATEWAY,WORKFLOW,POLICY,AI,AUDIT,EVENTS
+          # 15-minute timeout: each service image takes ~30s to compile
+          command_timeout: 15m
+          script: |
+            set -e
+            cd /root/ai-loan-app/infra/docker
+
+            SERVICES=""
+            # A packages/ change means every service needs a rebuild
+            if [ "$PACKAGES" = "true" ] || [ "$INFRA" = "true" ]; then
+              SERVICES="api-gateway workflow-service policy-service ai-execution-service audit-service event-consumer"
+            else
+              [ "$GATEWAY"  = "true" ] && SERVICES="$SERVICES api-gateway"
+              [ "$WORKFLOW" = "true" ] && SERVICES="$SERVICES workflow-service"
+              [ "$POLICY"   = "true" ] && SERVICES="$SERVICES policy-service"
+              [ "$AI"       = "true" ] && SERVICES="$SERVICES ai-execution-service"
+              [ "$AUDIT"    = "true" ] && SERVICES="$SERVICES audit-service"
+              [ "$EVENTS"   = "true" ] && SERVICES="$SERVICES event-consumer"
+            fi
+
+            if [ -n "$SERVICES" ]; then
+              echo "Rebuilding: $SERVICES"
+              docker compose build --no-cache $SERVICES
+            else
+              echo "No application service changes — skipping build"
+            fi
+
+      # ── Rolling restart ───────────────────────────────────────
+      # Bring up only the services that were rebuilt (or all app services
+      # if infra/packages changed). Infrastructure containers (postgres,
+      # kafka, redis, …) are intentionally left untouched.
+      - name: Rolling restart
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          INFRA:     ${{ steps.changes.outputs.infra }}
+          PACKAGES:  ${{ steps.changes.outputs.packages }}
+          GATEWAY:   ${{ steps.changes.outputs.gateway }}
+          WORKFLOW:  ${{ steps.changes.outputs.workflow }}
+          POLICY:    ${{ steps.changes.outputs.policy }}
+          AI:        ${{ steps.changes.outputs.ai }}
+          AUDIT:     ${{ steps.changes.outputs.audit }}
+          EVENTS:    ${{ steps.changes.outputs.events }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: INFRA,PACKAGES,GATEWAY,WORKFLOW,POLICY,AI,AUDIT,EVENTS
+          command_timeout: 10m
+          script: |
+            set -e
+            cd /root/ai-loan-app/infra/docker
+
+            SERVICES=""
+            if [ "$PACKAGES" = "true" ] || [ "$INFRA" = "true" ]; then
+              SERVICES="api-gateway workflow-service policy-service ai-execution-service audit-service event-consumer"
+            else
+              [ "$GATEWAY"  = "true" ] && SERVICES="$SERVICES api-gateway"
+              [ "$WORKFLOW" = "true" ] && SERVICES="$SERVICES workflow-service"
+              [ "$POLICY"   = "true" ] && SERVICES="$SERVICES policy-service"
+              [ "$AI"       = "true" ] && SERVICES="$SERVICES ai-execution-service"
+              [ "$AUDIT"    = "true" ] && SERVICES="$SERVICES audit-service"
+              [ "$EVENTS"   = "true" ] && SERVICES="$SERVICES event-consumer"
+            fi
+
+            if [ -n "$SERVICES" ]; then
+              docker compose up -d --no-deps $SERVICES
+            else
+              echo "Nothing to restart"
+              exit 0
+            fi
+
+      # ── Health-check gate ─────────────────────────────────────
+      # Poll the api-gateway /health for up to 90 seconds.
+      # If any app service failed to start, the gateway will report
+      # unhealthy and we fail the deployment here rather than silently.
+      - name: Verify deployment health
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 2m
+          script: |
+            echo "Waiting for api-gateway to become healthy..."
+            for i in $(seq 1 18); do
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/health || echo "000")
+              if [ "$STATUS" = "200" ]; then
+                echo "api-gateway healthy after $((i * 5))s"
+                exit 0
+              fi
+              echo "  attempt $i/18 — status $STATUS, retrying in 5s..."
+              sleep 5
+            done
+            echo "DEPLOYMENT FAILED — api-gateway did not become healthy within 90s"
+            docker compose -f /root/ai-loan-app/infra/docker/docker-compose.yml ps
+            exit 1
+
+      # ── Notify on failure ─────────────────────────────────────
+      - name: Notify on failure
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            echo "=== Container status at failure ==="
+            docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            echo ""
+            echo "=== Last 50 lines from each app service ==="
+            for svc in loan-api-gateway loan-workflow-service loan-ai-service loan-policy-service loan-audit-service; do
+              echo "--- $svc ---"
+              docker logs "$svc" --tail=50 2>&1 || true
+            done
