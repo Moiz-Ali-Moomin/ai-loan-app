@@ -1,14 +1,16 @@
 import { createLogger } from '@loan-platform/logger';
-import { withSpan, createHistogram, createCounter, createGauge } from '@loan-platform/telemetry';
+import { withSpan, createHistogram, createCounter } from '@loan-platform/telemetry';
 import { OpenAIEmbeddingProvider, OpenAIEmbeddingError } from './openai-provider.js';
 import type { EmbeddingProvider, EmbeddingServiceConfig } from './types.js';
 
 const logger = createLogger('ai-execution:embedding-service');
 
-const batchLatency = createHistogram('rag_embedding_batch_latency_ms', 'End-to-end batch embedding latency ms', ['provider']);
-const batchSize = createHistogram('rag_embedding_batch_size', 'Documents per embedding batch', ['provider']);
-const retryCount = createCounter('rag_embedding_retries_total', 'Total embedding retries', ['provider']);
-const activeIngestions = createGauge('rag_active_ingestions', 'Currently in-flight ingestion operations');
+const batchLatency = createHistogram('rag', 'rag_embedding_batch_latency_ms', { description: 'End-to-end batch embedding latency ms' });
+const batchSize = createHistogram('rag', 'rag_embedding_batch_size', { description: 'Documents per embedding batch' });
+const retryCount = createCounter('rag', 'rag_embedding_retries_total', { description: 'Total embedding retries' });
+// ObservableGauge is callback-based in OTEL SDK — we track via counter proxy
+const ingestionStartCounter = createCounter('rag', 'rag_ingestion_started_total', { description: 'Ingestion operations started' });
+const ingestionEndCounter = createCounter('rag', 'rag_ingestion_ended_total', { description: 'Ingestion operations ended' });
 
 function loadConfig(): EmbeddingServiceConfig {
   return {
@@ -81,7 +83,7 @@ export async function embedTexts(texts: string[]): Promise<number[][]> {
   const provider = buildProvider(config);
 
   return withSpan('ai-execution-service', 'embedding:embedTexts', { count: texts.length }, async () => {
-    activeIngestions.record(1);
+    ingestionStartCounter.add(1);
     const start = Date.now();
     const allEmbeddings: number[][] = new Array(texts.length);
 
@@ -115,7 +117,7 @@ export async function embedTexts(texts: string[]): Promise<number[][]> {
 
       return allEmbeddings;
     } finally {
-      activeIngestions.record(0);
+      ingestionEndCounter.add(1);
     }
   });
 }

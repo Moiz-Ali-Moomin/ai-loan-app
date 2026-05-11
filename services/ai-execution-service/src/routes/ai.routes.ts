@@ -63,7 +63,7 @@ export default async function aiRoutes(fastify: FastifyInstance) {
           tenantId: body.tenantId,
           queryText: `${body.loanDetails.loanType} loan risk assessment. Amount: ${body.loanDetails.requestedAmount}. Purpose: ${body.loanDetails.purpose}. KYC: ${body.applicantProfile.kycVerified}`,
           documentTypes: ['kyc_guideline', 'aml_policy', 'risk_policy', 'compliance_manual'],
-          jurisdiction: (body as Record<string, unknown>)['jurisdiction'] as string | undefined,
+          jurisdiction: (body as unknown as Record<string, unknown>)['jurisdiction'] as string | undefined,
           requesterType: 'service',
           traceId,
           correlationId,

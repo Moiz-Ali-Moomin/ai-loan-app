@@ -254,7 +254,6 @@ export default async function embeddingsRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/embeddings/health',
     async (_request: FastifyRequest, reply: FastifyReply) => {
-      const repo = new VectorRepository(fastify.pg);
       try {
         await fastify.pg.query('SELECT 1 FROM document_embeddings LIMIT 1');
         return reply.send({

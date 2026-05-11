@@ -8,9 +8,9 @@ import { chunkDocument } from './chunker.js';
 
 const logger = createLogger('ai-execution:ingestion-service');
 
-const ingestionDuration = createHistogram('rag_ingestion_duration_ms', 'End-to-end document ingestion duration ms', ['document_type']);
-const ingestionChunks = createCounter('rag_ingestion_chunks_total', 'Total chunks ingested', ['document_type', 'status']);
-const ingestionDocuments = createCounter('rag_ingestion_documents_total', 'Total documents ingested', ['document_type', 'status']);
+const ingestionDuration = createHistogram('rag', 'rag_ingestion_duration_ms', { description: 'End-to-end document ingestion duration ms' });
+const ingestionChunks = createCounter('rag', 'rag_ingestion_chunks_total', { description: 'Total chunks ingested' });
+const ingestionDocuments = createCounter('rag', 'rag_ingestion_documents_total', { description: 'Total documents ingested' });
 
 // Threshold: run ANALYZE after inserting more than this many rows
 const ANALYZE_THRESHOLD = 500;

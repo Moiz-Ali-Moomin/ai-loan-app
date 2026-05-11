@@ -15,9 +15,9 @@ import type {
 
 const logger = createLogger('ai-execution:vector-repository');
 
-const queryLatency = createHistogram('rag_vector_query_latency_ms', 'pgvector similarity search latency ms', ['operation']);
-const retrievalHits = createCounter('rag_retrieval_hits_total', 'Total chunks returned by vector search', []);
-const ingestionRows = createCounter('rag_ingestion_rows_total', 'Total chunk rows inserted', []);
+const queryLatency = createHistogram('rag', 'rag_vector_query_latency_ms', { description: 'pgvector similarity search latency ms' });
+const retrievalHits = createCounter('rag', 'rag_retrieval_hits_total', { description: 'Total chunks returned by vector search' });
+const ingestionRows = createCounter('rag', 'rag_ingestion_rows_total', { description: 'Total chunk rows inserted' });
 
 // ── pgvector formatting helper ────────────────────────────────
 function pgVector(embedding: number[]): string {

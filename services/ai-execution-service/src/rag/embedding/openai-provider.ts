@@ -4,9 +4,9 @@ import type { EmbeddingProvider, EmbeddingRequest, EmbeddingResponse } from './t
 
 const logger = createLogger('ai-execution:embedding:openai');
 
-const embeddingLatency = createHistogram('rag_embedding_latency_ms', 'Embedding API call latency in ms', ['provider', 'model']);
-const embeddingTokens = createCounter('rag_embedding_tokens_total', 'Total tokens consumed by embedding calls', ['provider', 'model']);
-const embeddingErrors = createCounter('rag_embedding_errors_total', 'Total embedding API errors', ['provider', 'error_type']);
+const embeddingLatency = createHistogram('rag', 'rag_embedding_latency_ms', { description: 'Embedding API call latency in ms' });
+const embeddingTokens = createCounter('rag', 'rag_embedding_tokens_total', { description: 'Total tokens consumed by embedding calls' });
+const embeddingErrors = createCounter('rag', 'rag_embedding_errors_total', { description: 'Total embedding API errors' });
 
 export class OpenAIEmbeddingProvider implements EmbeddingProvider {
   readonly name = 'openai';

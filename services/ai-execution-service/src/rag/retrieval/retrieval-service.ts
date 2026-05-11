@@ -12,8 +12,8 @@ import { VectorRepository, buildQueryHash } from '../repository/vector.repositor
 
 const logger = createLogger('ai-execution:retrieval-service');
 
-const queryEmbedLatency = createHistogram('rag_query_embed_latency_ms', 'Query embedding latency ms', []);
-const contextTokens = createHistogram('rag_context_tokens', 'Estimated tokens in assembled RAG context', []);
+const queryEmbedLatency = createHistogram('rag', 'rag_query_embed_latency_ms', { description: 'Query embedding latency ms' });
+const contextTokens = createHistogram('rag', 'rag_context_tokens', { description: 'Estimated tokens in assembled RAG context' });
 
 // Rough token estimator: ~4 chars per token (GPT-style)
 function estimateTokens(text: string): number {
