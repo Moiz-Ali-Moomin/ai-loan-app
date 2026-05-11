@@ -11,12 +11,10 @@ export class LocalEmbeddingProvider implements EmbeddingProvider {
   readonly name = 'local';
   readonly dimensions: number;
   private readonly baseUrl: string;
-  private readonly model: string;
   private readonly timeoutMs: number;
 
   constructor(config: { model: string; dimensions: number; timeoutMs: number }) {
     this.baseUrl = (process.env['FASTEMBED_URL'] ?? 'http://fastembed:8000').replace(/\/$/, '');
-    this.model = config.model;
     this.dimensions = config.dimensions;
     this.timeoutMs = config.timeoutMs;
   }
