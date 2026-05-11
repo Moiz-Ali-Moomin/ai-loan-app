@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS document_embeddings (
     title           TEXT,                   -- human-readable document title
     content         TEXT        NOT NULL,   -- raw chunk text stored for retrieval
     chunk_index     INTEGER     NOT NULL,   -- 0-based position within source document
-    embedding       VECTOR(1024) NOT NULL,  -- dense embedding vector (1024-dim)
+    embedding       VECTOR(384) NOT NULL,   -- dense embedding vector (384-dim, BGE-small-en-v1.5)
     metadata        JSONB,                  -- jurisdiction, policy_version, effective_date, author, tags, etc.
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 

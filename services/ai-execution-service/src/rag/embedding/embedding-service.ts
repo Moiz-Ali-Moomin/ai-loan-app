@@ -1,6 +1,7 @@
 import { createLogger } from '@loan-platform/logger';
 import { withSpan, createHistogram, createCounter } from '@loan-platform/telemetry';
 import { OpenAIEmbeddingProvider, OpenAIEmbeddingError } from './openai-provider.js';
+import { LocalEmbeddingProvider } from './local-provider.js';
 import type { EmbeddingProvider, EmbeddingServiceConfig } from './types.js';
 
 const logger = createLogger('ai-execution:embedding-service');
@@ -32,7 +33,13 @@ function buildProvider(config: EmbeddingServiceConfig): EmbeddingProvider {
       timeoutMs: config.timeoutMs,
     });
   }
-  // Future: local model provider (ONNX, llama.cpp, etc.)
+  if (config.provider === 'local') {
+    return new LocalEmbeddingProvider({
+      model: config.model,
+      dimensions: config.dimensions,
+      timeoutMs: config.timeoutMs,
+    });
+  }
   throw new Error(`Unsupported embedding provider: ${config.provider}`);
 }
 
