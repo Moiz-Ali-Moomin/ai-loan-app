@@ -9,6 +9,7 @@ export enum RiskLevel {
 
 export interface AIDecisionRequest {
   loanRequestId: UUID;
+  tenantId: UUID;
   applicantProfile: {
     creditScore: number;
     annualIncome: number;

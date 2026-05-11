@@ -87,7 +87,7 @@ export default async function aiRoutes(fastify: FastifyInstance) {
           [
             decisionId,
             body.loanRequestId,
-            'system',
+            body.tenantId,
             analysis.riskScore,
             riskLevel,
             analysis.recommendation,

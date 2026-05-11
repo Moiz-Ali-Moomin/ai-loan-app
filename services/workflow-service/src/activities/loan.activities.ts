@@ -166,6 +166,7 @@ export function createLoanActivities(
           `${serviceUrls.ai}/api/v1/ai/analyze`,
           {
             loanRequestId,
+            tenantId,
             applicantProfile: {
               creditScore: loan.applicant_credit_score,
               annualIncome: parseFloat(loan.applicant_annual_income),
@@ -213,12 +214,17 @@ export function createLoanActivities(
 
     async storeAuditRecord(input) {
       return withSpan('workflow-service', 'activity:storeAuditRecord', { loanRequestId: input.loanRequestId }, async () => {
+        const { rows: wfRows } = await pool.query(
+          'SELECT id FROM workflow_runs WHERE temporal_workflow_id = $1',
+          [input.workflowId]
+        );
+        const workflowRunId = wfRows[0]?.id ?? null;
         await axios.post(
           `${serviceUrls.audit}/api/v1/audit`,
           {
             tenantId: input.tenantId,
             loanRequestId: input.loanRequestId,
-            workflowRunId: input.runId,
+            workflowRunId,
             eventType: input.eventType,
             actorType: 'SYSTEM',
             serviceName: 'workflow-service',
