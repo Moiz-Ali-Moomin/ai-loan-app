@@ -218,7 +218,7 @@ export function createLoanActivities(
           {
             tenantId: input.tenantId,
             loanRequestId: input.loanRequestId,
-            workflowRunId: input.workflowId,
+            workflowRunId: input.runId,
             eventType: input.eventType,
             actorType: 'SYSTEM',
             serviceName: 'workflow-service',
