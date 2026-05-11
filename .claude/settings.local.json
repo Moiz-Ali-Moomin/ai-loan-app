@@ -114,7 +114,19 @@
       "Bash(ssh root@62.238.25.225 \"cd ~/ai-loan-app/infra/docker && docker compose up -d --no-deps tempo 2>&1\")",
       "Bash(ssh root@62.238.25.225 \"sleep 40 && docker ps --format 'table {{.Names}}\\\\t{{.Status}}' | grep tempo && docker stats loan-tempo --no-stream\")",
       "Bash(ssh root@62.238.25.225 \"sleep 45 && docker ps --format 'table {{.Names}}\\\\t{{.Status}}' | grep tempo\")",
-      "Bash(ssh root@62.238.25.225 \"sleep 60 && docker ps --format 'table {{.Names}}\\\\t{{.Status}}' | grep -E 'tempo\\\\b'\")"
+      "Bash(ssh root@62.238.25.225 \"sleep 60 && docker ps --format 'table {{.Names}}\\\\t{{.Status}}' | grep -E 'tempo\\\\b'\")",
+      "Bash(ssh root@62.238.25.225 \"cd ~/ai-loan-app/infra/docker && cat observability/otel-collector.yaml 2>&1\")",
+      "Bash(ssh root@62.238.25.225 \"curl -s http://localhost:4318/metrics 2>&1 | head -5; echo '---'; curl -s -o /dev/null -w '%{http_code}' http://localhost:4318/v1/traces 2>&1; echo; curl -s http://localhost:3200/ready 2>&1\")",
+      "Bash(ssh root@62.238.25.225 \"docker exec loan-otel-collector wget -qO- http://localhost:8889/metrics 2>&1 | head -10 && echo '---' && docker exec loan-tempo wget -qO- http://localhost:3200/ready 2>&1\")",
+      "Bash(ssh root@62.238.25.225 'docker exec loan-api-gateway node -e \" *)",
+      "Bash(ssh root@62.238.25.225 \"docker exec loan-api-gateway env | grep OTEL && echo '---' && docker exec loan-api-gateway cat /proc/1/cmdline | tr '\\\\0' ' '\")",
+      "Bash(ssh root@62.238.25.225 \"docker exec loan-api-gateway node -e \\\\\"const http=require\\('http'\\); http.get\\('http://otel-collector:4318', r => console.log\\('status:', r.statusCode\\)\\).on\\('error', e => console.log\\('err:', e.message\\)\\);\\\\\" 2>&1\")",
+      "Bash(ssh root@62.238.25.225 \"docker logs loan-otel-collector --tail=20 2>&1\")",
+      "Bash(ssh root@62.238.25.225 \"docker exec loan-api-gateway nc -zv otel-collector 4318 2>&1; docker logs loan-otel-collector --since=2m 2>&1 | grep -E 'error|warn|Exporting|received' | tail -10\")",
+      "Bash(ssh root@62.238.25.225 \"docker logs loan-otel-collector --since=3m 2>&1 | tail -15\")",
+      "Bash(dir \"c:\\\\Users\\\\Haxor\\\\Desktop\\\\AI Loan App\")",
+      "Bash(ssh root@62.238.25.225 \"grep -A5 'container_name: loan-tempo' ~/ai-loan-app/infra/docker/docker-compose.yml | grep memory\")",
+      "Bash(ssh root@62.238.25.225 \"grep -n 'loan-tempo\\\\|memory' ~/ai-loan-app/infra/docker/docker-compose.yml | grep -A2 'loan-tempo'\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\Haxor\\.claude\\projects\\c--Users-Haxor-Desktop-AI-Loan-App\\memory"
