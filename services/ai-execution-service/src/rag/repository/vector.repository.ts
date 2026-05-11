@@ -164,9 +164,7 @@ export class VectorRepository {
       );
       baseParams.push(...metaParams);
 
-      const sql = `
-        SET LOCAL ivfflat.probes = 10;
-
+      const selectSql = `
         SELECT
           id,
           tenant_id,
@@ -187,7 +185,22 @@ export class VectorRepository {
         LIMIT $4
       `;
 
-      const { rows } = await this.pool.query(sql, baseParams);
+      // SET LOCAL must be in the same transaction; issue as two separate calls
+      // because pg driver does not allow multiple commands in one prepared statement.
+      const client = await this.pool.connect();
+      let rows: Record<string, unknown>[];
+      try {
+        await client.query('BEGIN');
+        await client.query('SET LOCAL ivfflat.probes = 10');
+        const result = await client.query(selectSql, baseParams);
+        await client.query('COMMIT');
+        rows = result.rows as Record<string, unknown>[];
+      } catch (err) {
+        await client.query('ROLLBACK').catch(() => undefined);
+        throw err;
+      } finally {
+        client.release();
+      }
       const searchLatencyMs = Date.now() - start;
 
       queryLatency.record(searchLatencyMs, { operation: 'semantic_search' });
