@@ -15,7 +15,6 @@ import {
 } from '../../common/types.js';
 import {
   FlowNotFoundError,
-  FlowNotPublishedError,
   ValidationError,
 } from '../../common/errors.js';
 import { flowPublishTotal } from '../../utils/engine-metrics.js';

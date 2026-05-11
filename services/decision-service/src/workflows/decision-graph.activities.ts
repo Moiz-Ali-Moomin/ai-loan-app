@@ -7,7 +7,7 @@
 import { Context } from '@temporalio/activity';
 import { createLogger } from '@loan-platform/logger';
 import { KafkaTopic } from '@loan-platform/shared-types';
-import type { FinalDecision, TraceEntry, DecisionNodeType, NodeExecutionStatus } from '../common/types.js';
+import type { FinalDecision, TraceEntry, DecisionNodeType, ApprovalPriority } from '../common/types.js';
 
 const logger = createLogger('decision-service:activities');
 
@@ -57,7 +57,6 @@ export interface NodeActivityOutput {
 }
 
 // These are resolved at runtime by the NestJS DI container via the worker bootstrap
-let _graphEngine: import('../engine/graph-engine.js').GraphEngine;
 let _flowRepository: import('../repositories/flow.repository.js').FlowRepository;
 let _executionRepository: import('../repositories/execution.repository.js').ExecutionRepository;
 let _approvalRepository: import('../repositories/approval.repository.js').ApprovalRepository;
@@ -66,7 +65,6 @@ let _kafkaProducer: import('@loan-platform/kafka').KafkaProducerClient;
 let _nodeExecutor: import('../engine/node-executor.js').NodeExecutor;
 
 export function injectActivityDependencies(deps: {
-  graphEngine: import('../engine/graph-engine.js').GraphEngine;
   flowRepository: import('../repositories/flow.repository.js').FlowRepository;
   executionRepository: import('../repositories/execution.repository.js').ExecutionRepository;
   approvalRepository: import('../repositories/approval.repository.js').ApprovalRepository;
@@ -74,7 +72,6 @@ export function injectActivityDependencies(deps: {
   kafkaProducer: import('@loan-platform/kafka').KafkaProducerClient;
   nodeExecutor: import('../engine/node-executor.js').NodeExecutor;
 }): void {
-  _graphEngine = deps.graphEngine;
   _flowRepository = deps.flowRepository;
   _executionRepository = deps.executionRepository;
   _approvalRepository = deps.approvalRepository;
@@ -117,11 +114,9 @@ export const DecisionGraphActivities = {
 
   async executeGraphNode(input: NodeActivityInput): Promise<NodeActivityOutput> {
     Context.current().heartbeat();
-    const start = Date.now();
 
     // Reconstruct a lightweight DecisionNode for the NodeExecutor
     const { DecisionNode } = await import('../domain/decision-flow.entity.js');
-    const { ExecutionContext } = await import('../common/types.js');
 
     const node = new DecisionNode({
       id: input.node.id,
@@ -146,7 +141,7 @@ export const DecisionGraphActivities = {
       flowId: '',
       applicationId: input.applicationId,
       correlationId: input.correlationId,
-      traceId: Context.current().info.workflowExecution.workflowId,
+      traceId: Context.current().info.workflowExecution?.workflowId ?? '',
       input: input.input,
       nodeOutputs: input.nodeOutputs,
       riskScore: input.riskScore,
@@ -201,7 +196,7 @@ export const DecisionGraphActivities = {
     temporalSignalName: string;
   }): Promise<string> {
     const { ApprovalRequest } = await import('../domain/approval-request.entity.js');
-    const { ApprovalPriority } = await import('../common/types.js');
+    const { ApprovalPriority: ApprovalPriorityEnum } = await import('../common/types.js');
 
     const approval = ApprovalRequest.create({
       tenantId: input.tenantId,
@@ -209,7 +204,7 @@ export const DecisionGraphActivities = {
       nodeId: input.nodeId,
       applicationId: input.applicationId,
       assignedRole: input.assignedRole,
-      priority: (input.priority as ApprovalPriority) ?? ApprovalPriority.NORMAL,
+      priority: (input.priority as ApprovalPriority) ?? ApprovalPriorityEnum.NORMAL,
       contextSnapshot: input.contextSnapshot,
       dueDurationMs: input.dueDurationMs,
       escalateAfterMs: input.escalateAfterMs,

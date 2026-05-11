@@ -7,8 +7,7 @@ import { ApprovalRequest } from '../../domain/approval-request.entity.js';
 import { ApprovalRepository } from '../../repositories/approval.repository.js';
 import { CacheService } from '../../infrastructure/cache.service.js';
 import { ExecutionService } from '../execution/execution.service.js';
-import { ApprovalNotFoundError, ApprovalAlreadyDecidedError, TenantIsolationError } from '../../common/errors.js';
-import { ApprovalStatus, type ApprovalPriority } from '../../common/types.js';
+import { ApprovalNotFoundError, TenantIsolationError } from '../../common/errors.js';
 import { approvalDecisionsTotal, approvalWaitDuration } from '../../utils/engine-metrics.js';
 
 const logger = createLogger('decision-service:approval-service');

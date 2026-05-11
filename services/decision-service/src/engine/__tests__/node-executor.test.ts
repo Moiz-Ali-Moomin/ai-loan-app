@@ -8,7 +8,7 @@ import {
   type RuleNodeConfig,
   type ScoreNodeConfig,
 } from '../../common/types.js';
-import { NodeExecutionError, NodeTimeoutError } from '../../common/errors.js';
+import { NodeExecutionError } from '../../common/errors.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

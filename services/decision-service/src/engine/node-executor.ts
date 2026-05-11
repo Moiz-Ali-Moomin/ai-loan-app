@@ -11,7 +11,6 @@ import {
   type ConditionNodeConfig,
   type AINodeConfig,
   type ScoreNodeConfig,
-  type ApprovalNodeConfig,
   type WebhookNodeConfig,
   type DelayNodeConfig,
 } from '../common/types.js';
@@ -50,7 +49,7 @@ function evaluateCondition(expression: string, ctx: ExecutionContext): boolean {
     .replace(/output\./g, '');
 
   // Guard: only allow alphanumeric, dots, brackets, quotes, comparators, spaces
-  if (!/^[\w\s.><=!'"\[\]()]+$/.test(sanitised)) {
+  if (!/^[\w\s.><=!'"[\]()]+$/.test(sanitised)) {
     logger.warn('Unsafe condition expression blocked', { expression });
     return false;
   }
@@ -420,7 +419,7 @@ export class NodeExecutor {
     };
   }
 
-  private buildSyntheticRequest(ctx: ExecutionContext, decisionType: string): Parameters<AIReasoningClient['reason']>[0] {
+  private buildSyntheticRequest(ctx: ExecutionContext, _decisionType: string): Parameters<AIReasoningClient['reason']>[0] {
     const inp = ctx.input as Record<string, unknown>;
     return {
       tenant_id: ctx.tenantId,

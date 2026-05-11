@@ -14,14 +14,12 @@ import {
   setHandler,
   condition,
   proxyActivities,
-  sleep,
-  startChild,
   workflowInfo,
   log,
   ApplicationFailure,
 } from '@temporalio/workflow';
-import type { DecisionGraphActivities } from './decision-graph.activities.js';
-import type { FinalDecision, TraceEntry } from '../common/types.js';
+import type { DecisionGraphActivities, FlowSnapshot, NodeActivityOutput } from './decision-graph.activities.js';
+import type { FinalDecision, TraceEntry, DecisionNodeType } from '../common/types.js';
 
 // ─── Signal & Query definitions ────────────────────────────────────────────────
 
@@ -106,7 +104,7 @@ export async function DecisionGraphWorkflow(
   const { workflowId, runId } = workflowInfo();
 
   let status = 'RUNNING';
-  let trace: TraceEntry[] = [];
+  const trace: TraceEntry[] = [];
   let approvalPending = false;
   let approvalResolved: ApprovalSignalPayload | null = null;
   let cancelled = false;
@@ -156,7 +154,7 @@ export async function DecisionGraphWorkflow(
     // 3. Graph traversal
     let currentNodeId: string | undefined = snapshot.entryNodeId;
     const visitedNodes = new Set<string>();
-    const nodeMap = new Map(snapshot.nodes.map((n: { id: string }) => [n.id, n]));
+    const nodeMap = new Map(snapshot.nodes.map((n: FlowSnapshot['nodes'][0]) => [n.id, n]));
     const maxHops = snapshot.nodes.length * 2;
     let hops = 0;
     let riskScore = 0;
@@ -222,16 +220,16 @@ export async function DecisionGraphWorkflow(
           // Timeout — auto-escalate or reject per config
           finalDecision = 'ESCALATE';
           trace.push({
-            nodeId: node.id, nodeName: node.name ?? node.type, nodeType: node.type,
+            nodeId: node.id, nodeName: node.name ?? node.type, nodeType: node.type as DecisionNodeType,
             status: 'TIMED_OUT' as never, durationMs: dueDurationMs,
             startedAt: new Date().toISOString(), retryCount: 0,
           });
           break;
         }
 
-        const resolved = approvalResolved;
+        const resolved = approvalResolved as ApprovalSignalPayload;
         trace.push({
-          nodeId: node.id, nodeName: node.name ?? node.type, nodeType: node.type,
+          nodeId: node.id, nodeName: node.name ?? node.type, nodeType: node.type as DecisionNodeType,
           status: 'COMPLETED' as never,
           durationMs: Date.now() - workflowStart,
           startedAt: new Date().toISOString(),
@@ -253,7 +251,7 @@ export async function DecisionGraphWorkflow(
       // ── Terminal node ──────────────────────────────────────────────────────
       if (isTerminal) {
         trace.push({
-          nodeId: node.id, nodeName: node.name ?? 'END', nodeType: node.type,
+          nodeId: node.id, nodeName: node.name ?? 'END', nodeType: node.type as DecisionNodeType,
           status: 'COMPLETED' as never, durationMs: 0,
           startedAt: new Date().toISOString(), retryCount: 0,
         });
@@ -261,7 +259,7 @@ export async function DecisionGraphWorkflow(
       }
 
       // ── Regular node execution via activity ────────────────────────────────
-      const nodeResult = await executeGraphNode({
+      const nodeResult: NodeActivityOutput = await executeGraphNode({
         node,
         executionId: input.executionId,
         tenantId: input.tenantId,

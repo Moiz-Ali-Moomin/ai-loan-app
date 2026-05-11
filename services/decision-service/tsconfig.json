@@ -3,6 +3,10 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
+    "module": "commonjs",
+    "moduleResolution": "node10",
+    "verbatimModuleSyntax": false,
+    "ignoreDeprecations": "5.0",
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "exactOptionalPropertyTypes": false,

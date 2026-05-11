@@ -9,12 +9,10 @@ import { FlowRepository } from '../../repositories/flow.repository.js';
 import { CacheService } from '../../infrastructure/cache.service.js';
 import {
   ExecutionStatus,
-  type FinalDecision,
 } from '../../common/types.js';
 import {
   FlowNotFoundError,
   FlowNotPublishedError,
-  IdempotencyConflictError,
 } from '../../common/errors.js';
 import {
   type DecisionGraphWorkflowInput,
@@ -198,7 +196,7 @@ export class ExecutionService {
       throw new Error(`Cannot retry execution in status: ${existing['status']}`);
     }
 
-    return this.executeFlow({
+    const result = await this.executeFlow({
       tenantId,
       flowId: existing['flow_id'] as string,
       flowSnapshotId: existing['flow_snapshot_id'] as string | undefined,
@@ -209,6 +207,7 @@ export class ExecutionService {
       initiatedBy: retriedBy,
       initiatedByType: 'USER',
     });
+    return { newExecutionId: result.executionId, workflowId: result.workflowId };
   }
 
   async cancelExecution(executionId: string, tenantId: string, reason: string): Promise<void> {

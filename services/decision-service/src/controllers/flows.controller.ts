@@ -1,7 +1,6 @@
 import {
   Controller,
   Post,
-  Put,
   Get,
   Param,
   Body,
@@ -15,7 +14,7 @@ import {
 import { z, ZodError } from 'zod';
 import { createLogger } from '@loan-platform/logger';
 import { FlowService } from '../modules/flows/flow.service.js';
-import { JwtAuthGuard, RolesGuard, CurrentUser, TenantId, Roles, assertTenantAccess } from '../auth/jwt.guard.js';
+import { JwtAuthGuard, RolesGuard, CurrentUser, Roles } from '../auth/jwt.guard.js';
 import { UserRole, DecisionNodeType, type AuthenticatedUser } from '../common/types.js';
 import { FlowNotFoundError, ValidationError } from '../common/errors.js';
 

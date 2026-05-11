@@ -2,7 +2,6 @@ import { randomUUID } from 'crypto';
 import {
   ExecutionStatus,
   NodeExecutionStatus,
-  type ExecutionContext,
   type TraceEntry,
   type FinalDecision,
 } from '../common/types.js';

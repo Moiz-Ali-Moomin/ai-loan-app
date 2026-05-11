@@ -1,7 +1,6 @@
 import { Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TerminusModule } from '@nestjs/terminus';
-import { APP_GUARD } from '@nestjs/core';
 import { Reflector } from '@nestjs/core';
 import { createPool } from '@loan-platform/database';
 import { createKafkaClient, KafkaProducerClient, ensureTopicsExist } from '@loan-platform/kafka';
@@ -42,7 +41,6 @@ import { AuditClient } from './audit/audit-client.js';
 import { DecisionEventPublisher } from './events/decision-event-publisher.js';
 
 // ── Auth ────────────────────────────────────────────────────────────────────────
-import { JwtAuthGuard, RolesGuard } from './auth/jwt.guard.js';
 
 // ── Temporal ────────────────────────────────────────────────────────────────────
 import { TemporalWorkerService } from './workflows/temporal-worker.js';
@@ -194,7 +192,6 @@ const KAFKA_PRODUCER_TOKEN = 'KAFKA_PRODUCER';
     {
       provide: TemporalWorkerService,
       useFactory: (
-        graphEngine: GraphEngine,
         flowRepository: FlowRepository,
         executionRepository: ExecutionRepository,
         approvalRepository: ApprovalRepository,
@@ -202,11 +199,11 @@ const KAFKA_PRODUCER_TOKEN = 'KAFKA_PRODUCER';
         producer: KafkaProducerClient,
         nodeExecutor: NodeExecutor,
       ) => new TemporalWorkerService(
-        graphEngine, flowRepository, executionRepository, approvalRepository,
+        flowRepository, executionRepository, approvalRepository,
         auditClient, producer, nodeExecutor
       ),
       inject: [
-        GraphEngine, FlowRepository, ExecutionRepository, ApprovalRepository,
+        FlowRepository, ExecutionRepository, ApprovalRepository,
         AuditClient, KAFKA_PRODUCER_TOKEN, NodeExecutor,
       ],
     },
