@@ -23,7 +23,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline || npm ci
 
       - name: Build all packages and services
         run: npm run build
@@ -42,7 +42,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline || npm ci
 
       - name: Lint
         run: npm run lint

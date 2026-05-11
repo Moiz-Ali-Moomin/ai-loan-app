@@ -23,12 +23,14 @@
     "@opentelemetry/api": "1.9.0"
   },
   "devDependencies": {
-    "turbo": "^2.0.0",
-    "typescript": "^5.4.5",
     "@types/node": "^22.0.0",
-    "prettier": "^3.2.5",
+    "@typescript-eslint/eslint-plugin": "^8.59.2",
+    "@typescript-eslint/parser": "^8.59.2",
     "husky": "^9.0.11",
-    "lint-staged": "^15.2.4"
+    "lint-staged": "^15.2.4",
+    "prettier": "^3.2.5",
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.5"
   },
   "overrides": {
     "@opentelemetry/api": "1.9.0",
