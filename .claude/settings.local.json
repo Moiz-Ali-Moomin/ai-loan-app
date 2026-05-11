@@ -179,7 +179,12 @@
       "PowerShell(python \"C:\\\\Users\\\\Haxor\\\\Desktop\\\\generate_demo_pdf.py\" 2>&1)",
       "Bash(Select-Object Name, FullName)",
       "Bash(Format-Table -AutoSize)",
-      "Bash(xargs grep -l \"vector\\\\|embedding\\\\|rag\\\\|retrieval\\\\|pinecone\\\\|weaviate\\\\|milvus\\\\|chroma\")"
+      "Bash(xargs grep -l \"vector\\\\|embedding\\\\|rag\\\\|retrieval\\\\|pinecone\\\\|weaviate\\\\|milvus\\\\|chroma\")",
+      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_rsa\" -o StrictHostKeyChecking=no -o ConnectTimeout=15 root@62.238.25.225 \"echo 'SSH OK' && uname -a && df -h / && free -h\")",
+      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no -o ConnectTimeout=15 root@62.238.25.225 \"echo 'SSH OK' && uname -a && df -h / && free -h\")",
+      "Bash(ssh -i C:/Users/Haxor/.ssh/id_ed25519 -o StrictHostKeyChecking=no root@62.238.25.225 ' *)",
+      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no root@62.238.25.225 \"ls -la /root/ai-loan-app/ && find /root/ai-loan-app -name 'docker-compose*.yml' 2>/dev/null\")",
+      "Bash(ssh -i \"C:/Users/Haxor/.ssh/id_ed25519\" -o StrictHostKeyChecking=no root@62.238.25.225 \"docker ps -a --format 'table {{.Names}}\\\\t{{.Image}}\\\\t{{.Status}}'\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\Haxor\\.claude\\projects\\c--Users-Haxor-Desktop-AI-Loan-App\\memory"
