@@ -13,3 +13,8 @@ coverage/
 infra/k8s/base/secrets.yaml
 # Claude Code local config (machine-specific, contains local paths and permissions)
 .claude/
+
+# Graphify — exclude all generated output
+graphify-out/
+.graphifyignore
+CLAUDE.md
