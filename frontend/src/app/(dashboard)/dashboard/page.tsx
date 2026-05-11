@@ -2,11 +2,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { loansApi } from '@/lib/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { FileText, CheckCircle, XCircle, Clock, AlertTriangle, TrendingUp, Brain } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import Link from 'next/link';
 
-const RISK_COLORS = { LOW: '#22c55e', MEDIUM: '#f59e0b', HIGH: '#f97316', CRITICAL: '#ef4444' };
 
 export default function DashboardPage() {
   const { data: loansData } = useQuery({

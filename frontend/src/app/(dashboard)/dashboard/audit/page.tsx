@@ -194,7 +194,7 @@ export default function AuditPage() {
 
       <p className="mt-4 text-xs text-slate-400 text-center">
         Records are SHA-256 hash-chained and protected by SQL-level UPDATE/DELETE prevention.
-        Each row links to the previous record's hash for tamper detection.
+        Each row links to the previous record&apos;s hash for tamper detection.
       </p>
     </div>
   );

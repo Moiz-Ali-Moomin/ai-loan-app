@@ -73,7 +73,7 @@ const inputClass =
   'w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white';
 
 export default function NewLoanPage() {
-  const router = useRouter();
+  const _router = useRouter();
   const [form, setForm] = useState<FormState>(INITIAL);
   const [submitted, setSubmitted] = useState<{ loanRequestId: string; workflowId: string } | null>(null);
 
