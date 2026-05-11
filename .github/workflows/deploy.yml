@@ -57,62 +57,44 @@ jobs:
           username: root
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cat > /root/ai-loan-app/infra/docker/.env.tmp << 'ENVEOF'
-            NODE_ENV=production
-            VPS_IP=${{ secrets.VPS_HOST }}
-            PUBLIC_ORIGIN=http://${{ secrets.VPS_HOST }}
-
-            # PostgreSQL
-            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-
-            # Temporal PostgreSQL
-            TEMPORAL_POSTGRES_USER=${{ secrets.TEMPORAL_POSTGRES_USER }}
-            TEMPORAL_POSTGRES_PASSWORD=${{ secrets.TEMPORAL_POSTGRES_PASSWORD }}
-
-            # Redis
-            REDIS_URL=redis://redis:6379
-
-            # JWT & Crypto
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            PII_ENCRYPTION_KEY=${{ secrets.PII_ENCRYPTION_KEY }}
-            PII_KEY_VERSION=1
-
-            # Audit
-            AUDIT_HMAC_KEY=${{ secrets.AUDIT_HMAC_KEY }}
-
-            # MinIO
-            MINIO_ROOT_USER=${{ secrets.MINIO_ROOT_USER }}
-            MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD }}
-
-            # AI / Anthropic
-            ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-            AI_MODEL=claude-sonnet-4-6
-            AI_MOCK_MODE=false
-            ACTIVE_PROMPT_VERSION=1.2.0
-
-            # Embedding
-            EMBEDDING_PROVIDER=local
-            EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
-            EMBEDDING_DIMENSIONS=384
-            EMBEDDING_BATCH_SIZE=32
-            EMBEDDING_TIMEOUT_MS=30000
-            FASTEMBED_MODEL=BAAI/bge-small-en-v1.5
-
-            # OpenAI (only required when EMBEDDING_PROVIDER=openai)
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-
-            # RAG
-            RAG_SIMILARITY_THRESHOLD=0.72
-            RAG_TOP_K=8
-            RAG_MAX_CONTEXT_TOKENS=6000
-
-            # Grafana
-            GRAFANA_ADMIN_USER=${{ secrets.GRAFANA_ADMIN_USER }}
-            GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
-            ENVEOF
-            mv /root/ai-loan-app/infra/docker/.env.tmp /root/ai-loan-app/infra/docker/.env
+            ENV=/root/ai-loan-app/infra/docker/.env.tmp
+            # Use printf to avoid BOM injection that heredocs can introduce via SSH
+            printf '%s\n' \
+              'NODE_ENV=production' \
+              'VPS_IP=${{ secrets.VPS_HOST }}' \
+              'PUBLIC_ORIGIN=http://${{ secrets.VPS_HOST }}' \
+              'POSTGRES_USER=${{ secrets.POSTGRES_USER }}' \
+              'POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}' \
+              'POSTGRES_DB=${{ secrets.POSTGRES_DB }}' \
+              'TEMPORAL_POSTGRES_USER=${{ secrets.TEMPORAL_POSTGRES_USER }}' \
+              'TEMPORAL_POSTGRES_PASSWORD=${{ secrets.TEMPORAL_POSTGRES_PASSWORD }}' \
+              'REDIS_URL=redis://redis:6379' \
+              'JWT_SECRET=${{ secrets.JWT_SECRET }}' \
+              'PII_ENCRYPTION_KEY=${{ secrets.PII_ENCRYPTION_KEY }}' \
+              'PII_KEY_VERSION=1' \
+              'AUDIT_HMAC_KEY=${{ secrets.AUDIT_HMAC_KEY }}' \
+              'MINIO_ROOT_USER=${{ secrets.MINIO_ROOT_USER }}' \
+              'MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD }}' \
+              'ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}' \
+              'AI_MODEL=claude-sonnet-4-6' \
+              'AI_MOCK_MODE=false' \
+              'ACTIVE_PROMPT_VERSION=1.2.0' \
+              'EMBEDDING_PROVIDER=local' \
+              'EMBEDDING_MODEL=BAAI/bge-small-en-v1.5' \
+              'EMBEDDING_DIMENSIONS=384' \
+              'EMBEDDING_BATCH_SIZE=32' \
+              'EMBEDDING_TIMEOUT_MS=30000' \
+              'FASTEMBED_MODEL=BAAI/bge-small-en-v1.5' \
+              'OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}' \
+              'RAG_SIMILARITY_THRESHOLD=0.72' \
+              'RAG_TOP_K=8' \
+              'RAG_MAX_CONTEXT_TOKENS=6000' \
+              'GRAFANA_ADMIN_USER=${{ secrets.GRAFANA_ADMIN_USER }}' \
+              'GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}' \
+              > "$ENV"
+            # Strip any stray BOM characters that may have crept in
+            sed -i 's/\xEF\xBB\xBF//g' "$ENV"
+            mv "$ENV" /root/ai-loan-app/infra/docker/.env
 
       # ── Pull latest code ──────────────────────────────────────
       - name: Pull code on VPS
