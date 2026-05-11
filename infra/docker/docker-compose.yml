@@ -35,13 +35,13 @@ services:
   # ============================================================
 
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: loan-postgres
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 384M
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -629,6 +629,14 @@ services:
       AI_MOCK_MODE: ${AI_MOCK_MODE}
       AI_MODEL: ${AI_MODEL:-claude-sonnet-4-6}
       ACTIVE_PROMPT_VERSION: ${ACTIVE_PROMPT_VERSION:-1.2.0}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-openai}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1024}
+      EMBEDDING_BATCH_SIZE: ${EMBEDDING_BATCH_SIZE:-32}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      RAG_SIMILARITY_THRESHOLD: ${RAG_SIMILARITY_THRESHOLD:-0.72}
+      RAG_TOP_K: ${RAG_TOP_K:-8}
+      RAG_MAX_CONTEXT_TOKENS: ${RAG_MAX_CONTEXT_TOKENS:-6000}
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}

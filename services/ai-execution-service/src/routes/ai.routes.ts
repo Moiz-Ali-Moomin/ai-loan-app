@@ -9,6 +9,7 @@ import type { AIDecisionRequest } from '@loan-platform/shared-types';
 import { mockLLMAnalyze } from '../llm/mock-llm.js';
 import { claudeAnalyze } from '../llm/claude-analyzer.js';
 import { PromptManager } from '../prompts/prompt-manager.js';
+import { RAGPipeline } from '../rag/rag-pipeline.js';
 
 const logger = createLogger('ai-execution:routes');
 
@@ -22,6 +23,7 @@ export default async function aiRoutes(fastify: FastifyInstance) {
   });
 
   const promptManager = new PromptManager(minioClient);
+  const ragPipeline = new RAGPipeline(fastify.pg);
 
   fastify.post(
     '/ai/analyze',
@@ -53,12 +55,26 @@ export default async function aiRoutes(fastify: FastifyInstance) {
 
         const promptStorageKey = await promptManager.storePrompt(promptVersion, prompt, body.loanRequestId);
 
+        // ── RAG enrichment ──────────────────────────────────
+        // Retrieve relevant compliance/policy context from the vector store
+        // and attach it to the system prompt as an authoritative addendum.
+        // RAG failure is non-fatal — analysis proceeds with base knowledge.
+        const ragEnriched = await ragPipeline.enrichQuery({
+          tenantId: body.tenantId,
+          queryText: `${body.loanDetails.loanType} loan risk assessment. Amount: ${body.loanDetails.requestedAmount}. Purpose: ${body.loanDetails.purpose}. KYC: ${body.applicantProfile.kycVerified}`,
+          documentTypes: ['kyc_guideline', 'aml_policy', 'risk_policy', 'compliance_manual'],
+          jurisdiction: (body as Record<string, unknown>)['jurisdiction'] as string | undefined,
+          requesterType: 'service',
+          traceId,
+          correlationId,
+        });
+
         // Use real Claude when ANTHROPIC_API_KEY is set and AI_MOCK_MODE is not 'true'
         const useMock = process.env['AI_MOCK_MODE'] === 'true' || !process.env['ANTHROPIC_API_KEY'];
 
         const analysis = useMock
           ? await mockLLMAnalyze(body, promptVersion)
-          : await claudeAnalyze(body, prompt);
+          : await claudeAnalyze(body, prompt, ragEnriched.enrichedSystemAddendum);
 
         const responseStorageKey = await promptManager.storeResponse(
           { analysis, prompt, model: 'modelVersion' in analysis ? analysis.modelVersion : 'mock-v1' },

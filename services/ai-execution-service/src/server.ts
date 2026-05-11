@@ -4,6 +4,8 @@ import { createPool } from '@loan-platform/database';
 import { createKafkaClient, KafkaProducerClient, ensureTopicsExist } from '@loan-platform/kafka';
 import { createLogger } from '@loan-platform/logger';
 import aiRoutes from './routes/ai.routes.js';
+import embeddingsRoutes from './routes/embeddings.routes.js';
+import { embeddingProviderHealthCheck } from './rag/embedding/embedding-service.js';
 
 const logger = createLogger('ai-execution-service');
 
@@ -27,9 +29,20 @@ async function buildServer() {
   fastify.decorate('kafkaProducer', producer);
 
   await fastify.register(aiRoutes, { prefix: '/api/v1' });
+  await fastify.register(embeddingsRoutes, { prefix: '/api/v1' });
 
   fastify.get('/health', async (_, reply) => {
-    try { await pool.query('SELECT 1'); return reply.send({ status: 'healthy', service: 'ai-execution-service', mockMode: process.env['AI_MOCK_MODE'] !== 'false' }); }
+    try {
+      await pool.query('SELECT 1');
+      const embeddingHealthy = await embeddingProviderHealthCheck().catch(() => false);
+      return reply.send({
+        status: 'healthy',
+        service: 'ai-execution-service',
+        mockMode: process.env['AI_MOCK_MODE'] !== 'false',
+        embeddingProvider: process.env['EMBEDDING_PROVIDER'] ?? 'openai',
+        embeddingProviderHealthy: embeddingHealthy,
+      });
+    }
     catch { return reply.status(503).send({ status: 'unhealthy' }); }
   });
 

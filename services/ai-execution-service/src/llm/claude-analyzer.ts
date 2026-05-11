@@ -108,6 +108,7 @@ export interface ClaudeAnalysisResult {
 export async function claudeAnalyze(
   request: AIDecisionRequest,
   prompt: string,
+  ragSystemAddendum?: string,
 ): Promise<ClaudeAnalysisResult> {
   const apiKey = process.env['ANTHROPIC_API_KEY'];
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set');
@@ -115,10 +116,17 @@ export async function claudeAnalyze(
   const client = new Anthropic({ apiKey });
   const model = process.env['AI_MODEL'] ?? 'claude-sonnet-4-6';
 
+  // Append RAG context as a separate block after the base system prompt.
+  // This keeps the base prompt stable (important for prompt caching) while
+  // injecting retrieved policy knowledge for this specific request.
+  const systemContent = ragSystemAddendum
+    ? `${SYSTEM_PROMPT}\n\n${ragSystemAddendum}`
+    : SYSTEM_PROMPT;
+
   const response = await client.messages.create({
     model,
     max_tokens: 1024,
-    system: SYSTEM_PROMPT,
+    system: systemContent,
     messages: [{ role: 'user', content: prompt }],
     tools: [RISK_ASSESSMENT_TOOL],
     tool_choice: { type: 'tool', name: 'submit_risk_assessment' },

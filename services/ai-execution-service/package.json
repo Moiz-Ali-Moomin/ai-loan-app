@@ -5,7 +5,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "seed:compliance": "tsx src/rag/datasets/seed-compliance-docs.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.55.0",
