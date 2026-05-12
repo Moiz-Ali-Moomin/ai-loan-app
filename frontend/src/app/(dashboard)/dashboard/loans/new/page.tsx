@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { loansApi } from '@/lib/api';
-import { useRouter } from 'next/navigation';
 import { ChevronLeft, Loader2, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -73,8 +72,7 @@ const inputClass =
   'w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white';
 
 export default function NewLoanPage() {
-  const _router = useRouter();
-  const [form, setForm] = useState<FormState>(INITIAL);
+const [form, setForm] = useState<FormState>(INITIAL);
   const [submitted, setSubmitted] = useState<{ loanRequestId: string; workflowId: string } | null>(null);
 
   const set = (field: keyof FormState) => (
