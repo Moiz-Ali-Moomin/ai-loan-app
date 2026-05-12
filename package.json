@@ -17,7 +17,11 @@
     "infra:up": "docker-compose -f infra/docker/docker-compose.yml up -d",
     "infra:down": "docker-compose -f infra/docker/docker-compose.yml down",
     "infra:logs": "docker-compose -f infra/docker/docker-compose.yml logs -f",
-    "seed": "turbo run seed"
+    "seed": "turbo run seed",
+    "prisma:generate": "turbo run db:generate",
+    "prisma:migrate:dev": "npm run db:migrate:dev -w packages/database",
+    "prisma:migrate:deploy": "turbo run db:migrate:deploy",
+    "prisma:studio": "npm run db:studio -w packages/database"
   },
   "dependencies": {
     "@opentelemetry/api": "1.9.0"

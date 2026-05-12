@@ -98,9 +98,12 @@ async function buildServer() {
     uiConfig: { docExpansion: 'list', deepLinking: true },
   });
 
-  // Database
+  // Database (Raw Pool)
   const pool = createPool();
   fastify.decorate('pg', pool);
+
+  // Database (Prisma)
+  await fastify.register(import('./plugins/prisma.js'));
 
   // Kafka producer
   const kafka = createKafkaClient('api-gateway');

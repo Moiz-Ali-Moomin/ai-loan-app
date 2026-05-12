@@ -20,6 +20,7 @@ COPY --from=deps /app/packages ./packages
 COPY tsconfig.base.json ./
 COPY packages ./packages
 COPY services/api-gateway ./services/api-gateway
+RUN npm run db:generate -w packages/database
 RUN npm run build -w packages/shared-types
 RUN npm run build -w packages/telemetry
 RUN npm run build -w packages/logger

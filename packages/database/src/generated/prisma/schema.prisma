@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name      String   @db.VarChar(255)
+  slug      String   @unique @db.VarChar(100)
+  plan      String   @default("starter") @db.VarChar(50)
+  isActive  Boolean  @default(true) @map("is_active")
+  config    Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  @@index([slug], map: "idx_tenants_slug")
+  @@index([isActive], map: "idx_tenants_is_active")
+  @@map("tenants")
+}
+
+model User {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  email        String    @db.VarChar(255)
+  firstName    String?   @map("first_name") @db.VarChar(100)
+  lastName     String?   @map("last_name") @db.VarChar(100)
+  role         String    @default("reviewer") @db.VarChar(50)
+  passwordHash String?   @map("password_hash") @db.VarChar(255)
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at") @db.Timestamptz
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, email])
+  @@index([tenantId], map: "idx_users_tenant_id")
+  @@index([email], map: "idx_users_email")
+  @@index([role], map: "idx_users_role")
+  @@map("users")
+}
+
+model LoanRequest {
+  id                        String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenantId                  String    @map("tenant_id") @db.Uuid
+  status                    String    @default("PENDING") @db.VarChar(50)
+  loanType                  String    @map("loan_type") @db.VarChar(50)
+  requestedAmount           Decimal   @map("requested_amount") @db.Decimal(15, 2)
+  requestedTermMonths       Int       @map("requested_term_months")
+  purpose                   String
+  applicantId               String    @map("applicant_id") @db.VarChar(255)
+  applicantFirstName        String    @map("applicant_first_name")
+  applicantLastName         String    @map("applicant_last_name")
+  applicantEmail            String    @map("applicant_email") @db.VarChar(255)
+  applicantPhone            String?   @map("applicant_phone")
+  applicantDateOfBirth      DateTime? @map("applicant_date_of_birth") @db.Date
+  applicantNationalId       String?   @map("applicant_national_id")
+  applicantEmploymentStatus String?   @map("applicant_employment_status") @db.VarChar(50)
+  applicantAnnualIncome     Decimal?  @map("applicant_annual_income") @db.Decimal(15, 2)
+  applicantCreditScore      Int?      @map("applicant_credit_score")
+  applicantExistingDebt     Decimal?  @map("applicant_existing_debt") @db.Decimal(15, 2)
+  applicantKycVerified      Boolean   @default(false) @map("applicant_kyc_verified")
+  applicantKycVerifiedAt    DateTime? @map("applicant_kyc_verified_at") @db.Timestamptz
+  applicantAddress          Json?     @map("applicant_address")
+  applicantAddressEnc       String?   @map("applicant_address_enc")
+  businessInfo              Json?     @map("business_info")
+  collateral                Json?
+  metadata                  Json      @default("{}")
+  submittedAt               DateTime  @default(now()) @map("submitted_at") @db.Timestamptz
+  createdAt                 DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                 DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+  idempotencyKey            String?   @unique(map: "idx_loan_requests_idempotency_key") @map("idempotency_key") @db.VarChar(255)
+  piiKeyVersion             String    @default("1") @map("pii_key_version") @db.VarChar(20)
+
+  @@index([tenantId], map: "idx_loan_requests_tenant_id")
+  @@index([status], map: "idx_loan_requests_status")
+  @@index([applicantId], map: "idx_loan_requests_applicant_id")
+  @@index([submittedAt(sort: Desc)], map: "idx_loan_requests_submitted_at")
+  @@index([loanType], map: "idx_loan_requests_loan_type")
+  @@map("loan_requests")
+}
+
+model WorkflowRun {
+  id                 String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  loanRequestId      String    @map("loan_request_id") @db.Uuid
+  temporalWorkflowId String    @unique @map("temporal_workflow_id") @db.VarChar(255)
+  temporalRunId      String    @map("temporal_run_id") @db.VarChar(255)
+  status             String    @default("RUNNING") @db.VarChar(50)
+  currentStep        String?   @map("current_step") @db.VarChar(100)
+  loanStatus         String?   @map("loan_status") @db.VarChar(50)
+  policyVersion      String?   @map("policy_version") @db.VarChar(50)
+  aiModelVersion     String?   @map("ai_model_version") @db.VarChar(100)
+  fraudModelVersion  String?   @map("fraud_model_version") @db.VarChar(100)
+  traceId            String?   @map("trace_id") @db.VarChar(255)
+  correlationId      String?   @map("correlation_id") @db.VarChar(255)
+  steps              Json      @default("[]")
+  errorDetails       Json?     @map("error_details")
+  startedAt          DateTime  @default(now()) @map("started_at") @db.Timestamptz
+  completedAt        DateTime? @map("completed_at") @db.Timestamptz
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId], map: "idx_workflow_runs_tenant_id")
+  @@index([loanRequestId], map: "idx_workflow_runs_loan_request_id")
+  @@index([temporalWorkflowId], map: "idx_workflow_runs_temporal_workflow_id")
+  @@index([status], map: "idx_workflow_runs_status")
+  @@index([startedAt(sort: Desc)], map: "idx_workflow_runs_started_at")
+  @@map("workflow_runs")
+}
+
+model AuditLog {
+  id            String               @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenantId      String               @map("tenant_id") @db.Uuid
+  loanRequestId String?              @map("loan_request_id") @db.Uuid
+  workflowRunId String?              @map("workflow_run_id") @db.Uuid
+  eventType     String               @map("event_type") @db.VarChar(100)
+  actorId       String?              @map("actor_id") @db.Uuid
+  actorType     String               @map("actor_type") @db.VarChar(50)
+  serviceName   String               @map("service_name") @db.VarChar(100)
+  payload       Json                 @default("{}")
+  traceId       String?              @map("trace_id") @db.VarChar(255)
+  spanId        String?              @map("span_id") @db.VarChar(255)
+  correlationId String?              @map("correlation_id") @db.VarChar(255)
+  version       String               @default("1.0") @db.VarChar(20)
+  environment   String?              @db.VarChar(50)
+  ipAddress     Unsupported("inet")? @map("ip_address")
+  userAgent     String?              @map("user_agent")
+  hash          String               @db.VarChar(64)
+  previousHash  String?              @map("previous_hash") @db.VarChar(64)
+  signature     String?              @db.VarChar(64)
+  createdAt     DateTime             @default(now()) @map("created_at") @db.Timestamptz
+
+  @@id([id, createdAt])
+  @@index([tenantId], map: "idx_audit_logs_tenant_id")
+  @@index([loanRequestId], map: "idx_audit_logs_loan_request_id")
+  @@index([eventType], map: "idx_audit_logs_event_type")
+  @@index([createdAt(sort: Desc)], map: "idx_audit_logs_created_at")
+  @@index([traceId], map: "idx_audit_logs_trace_id")
+  @@index([correlationId], map: "idx_audit_logs_correlation_id")
+  @@index([signature], map: "idx_audit_logs_signature")
+  @@map("audit_logs")
+}
+
+model DocumentEmbedding {
+  id           String                     @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenantId     String                     @map("tenant_id") @db.Uuid
+  documentType String                     @map("document_type")
+  source       String?
+  title        String?
+  content      String
+  chunkIndex   Int                        @map("chunk_index")
+  embedding    Unsupported("vector(384)")
+  metadata     Json?
+  createdAt    DateTime                   @default(now()) @map("created_at") @db.Timestamptz
+
+  @@id([id, tenantId])
+  @@index([tenantId], map: "idx_doc_emb_tenant_id")
+  @@index([documentType], map: "idx_doc_emb_document_type")
+  @@index([createdAt(sort: Desc)], map: "idx_doc_emb_created_at")
+  @@index([tenantId, documentType, createdAt(sort: Desc)], map: "idx_doc_emb_tenant_type_created")
+  @@map("document_embeddings")
+}

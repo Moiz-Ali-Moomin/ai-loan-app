@@ -33,6 +33,17 @@
     "db:migrate": {
       "cache": false
     },
+    "db:generate": {
+      "dependsOn": ["^build"],
+      "outputs": ["src/generated/**"],
+      "cache": false
+    },
+    "db:migrate:deploy": {
+      "cache": false
+    },
+    "db:baseline": {
+      "cache": false
+    },
     "seed": {
       "dependsOn": ["db:migrate"],
       "cache": false

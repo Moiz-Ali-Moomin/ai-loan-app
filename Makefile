@@ -29,11 +29,26 @@ install: ## Install all npm workspace dependencies
 db-shell: ## Open psql shell in the Postgres container
 	docker exec -it loan-postgres psql -U loanapp -d loandb
 
-db-migrate: ## Re-run schema migrations
+db-migrate: ## Re-run raw schema migrations (Legacy)
 	docker exec loan-postgres psql -U loanapp -d loandb -f /migrations/001_initial_schema.sql
 
 db-seed: ## Run seed data
 	docker exec loan-postgres psql -U loanapp -d loandb -f /migrations/002_seed_data.sql
+
+prisma-generate: ## Generate Prisma client locally
+	npm run prisma:generate
+
+prisma-migrate-dev: ## Run Prisma migrate dev
+	npm run prisma:migrate:dev
+
+prisma-migrate-deploy: ## Run Prisma migrate deploy
+	npm run prisma:migrate:deploy
+
+prisma-studio: ## Open Prisma Studio
+	npm run prisma:studio
+
+db-baseline: ## Baseline production DB with initial schema
+	bash scripts/db-baseline.sh
 
 kafka-shell: ## Open Kafka CLI inside the Kafka container
 	docker exec -it loan-kafka bash

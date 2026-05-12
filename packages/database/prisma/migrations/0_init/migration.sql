@@ -1,0 +1,2 @@
+-- This is an empty baseline migration.
+-- It tells Prisma that the current production schema (001-007) is already applied.

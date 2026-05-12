@@ -1,0 +1,18 @@
+FROM node:20-bookworm-slim AS base
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Install openssl for Prisma query engine
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
+COPY package.json turbo.json ./
+COPY packages/database/package.json ./packages/database/
+COPY packages/database/prisma ./packages/database/prisma
+
+# Install only prisma and postgres deps needed for migration
+RUN npm install prisma@^6.8.2 @prisma/client@^6.8.2 pg postgres --no-save
+
+COPY scripts/db-migrate-prod.sh ./scripts/
+RUN chmod +x ./scripts/db-migrate-prod.sh
+
+CMD ["./scripts/db-migrate-prod.sh"]
