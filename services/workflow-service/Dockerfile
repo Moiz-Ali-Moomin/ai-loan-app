@@ -41,5 +41,5 @@ RUN chmod +x ./services/workflow-service/start.sh
 USER nodeapp
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3001/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+  CMD node --input-type=commonjs -e "require('http').get('http://localhost:3001/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
 CMD ["/bin/sh", "services/workflow-service/start.sh"]

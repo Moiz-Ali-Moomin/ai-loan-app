@@ -32,5 +32,5 @@ COPY --from=builder --chown=nodeapp:nodejs /app/services/ai-execution-service/pa
 USER nodeapp
 EXPOSE 3003
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
-  CMD node -e "require('http').get('http://localhost:3003/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+  CMD node --input-type=commonjs -e "require('http').get('http://localhost:3003/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
 CMD ["node", "services/ai-execution-service/dist/server.js"]

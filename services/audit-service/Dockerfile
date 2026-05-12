@@ -32,5 +32,5 @@ COPY --from=builder --chown=nodeapp:nodejs /app/services/audit-service/package.j
 USER nodeapp
 EXPOSE 3004
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
-  CMD node -e "require('http').get('http://localhost:3004/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+  CMD node --input-type=commonjs -e "require('http').get('http://localhost:3004/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
 CMD ["node", "services/audit-service/dist/server.js"]
