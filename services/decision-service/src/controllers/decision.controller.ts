@@ -20,16 +20,16 @@ import {
   KYCDecisionRequestSchema,
   AMLDecisionRequestSchema,
   ReviewDecisionRequestSchema,
-} from '../schemas/decision.schema';
-import { DecisionPipeline } from '../services/decision-pipeline';
-import { DecisionRepository } from '../repositories/decision.repository';
+} from '../schemas/decision.schema.js';
+import { DecisionPipeline } from '../services/decision-pipeline.js';
+import { DecisionRepository } from '../repositories/decision.repository.js';
 import {
   decisionLatencyHistogram,
   decisionOutcomeCounter,
   escalationCounter,
   confidenceHistogram,
   riskScoreHistogram,
-} from '../utils/metrics';
+} from '../utils/metrics.js';
 
 const logger = createLogger('decision-service:controller');
 

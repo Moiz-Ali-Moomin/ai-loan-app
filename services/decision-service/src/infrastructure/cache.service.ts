@@ -1,4 +1,4 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { createClient, type RedisClientType } from 'redis';
 import { createLogger } from '@loan-platform/logger';
 import { cacheHitsTotal, cacheMissesTotal } from '../utils/engine-metrics.js';

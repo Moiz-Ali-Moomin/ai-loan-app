@@ -6,7 +6,7 @@ import type {
   UnderwritingDecisionRequest,
   KYCDecisionRequest,
   AMLDecisionRequest,
-} from '../schemas/decision.schema';
+} from '../schemas/decision.schema.js';
 
 const logger = createLogger('decision-service:policy');
 

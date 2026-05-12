@@ -8,7 +8,7 @@ import type {
   RiskSignal,
   EscalationReason,
   Explanation,
-} from '../schemas/decision.schema';
+} from '../schemas/decision.schema.js';
 
 const logger = createLogger('decision-service:repository');
 

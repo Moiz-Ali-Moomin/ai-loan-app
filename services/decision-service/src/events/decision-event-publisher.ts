@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { KafkaTopic } from '@loan-platform/shared-types';
 import type { KafkaProducerClient } from '@loan-platform/kafka';
 import { createLogger } from '@loan-platform/logger';
-import type { DecisionOutcome } from '../schemas/decision.schema';
+import type { DecisionOutcome } from '../schemas/decision.schema.js';
 
 const logger = createLogger('decision-service:events');
 

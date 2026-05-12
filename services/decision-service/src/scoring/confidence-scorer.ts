@@ -9,9 +9,9 @@ import type {
   UnderwritingDecisionRequest,
   KYCDecisionRequest,
   AMLDecisionRequest,
-} from '../schemas/decision.schema';
-import type { PolicyEvaluationOutput } from '../policies/policy-evaluator';
-import type { AIReasoningOutput } from '../reasoning/ai-reasoning-client';
+} from '../schemas/decision.schema.js';
+import type { PolicyEvaluationOutput } from '../policies/policy-evaluator.js';
+import type { AIReasoningOutput } from '../reasoning/ai-reasoning-client.js';
 
 const logger = createLogger('decision-service:scoring');
 
@@ -168,7 +168,7 @@ export class ConfidenceScorer {
     if (policy.hardBlocked) return 0;
     const total = policy.outcomes.length;
     if (total === 0) return 0.5;
-    return parseFloat((policy.outcomes.filter(o => o.passed).length / total).toFixed(4));
+    return parseFloat((policy.outcomes.filter((o: { passed: boolean }) => o.passed).length / total).toFixed(4));
   }
 
   private computeCompositeConfidence(b: ConfidenceBreakdown): number {

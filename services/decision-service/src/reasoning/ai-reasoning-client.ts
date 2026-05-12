@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { createLogger } from '@loan-platform/logger';
 import { withSpan } from '@loan-platform/telemetry';
-import type { UnderwritingDecisionRequest, KYCDecisionRequest, AMLDecisionRequest } from '../schemas/decision.schema';
+import type { UnderwritingDecisionRequest, KYCDecisionRequest, AMLDecisionRequest } from '../schemas/decision.schema.js';
 
 const logger = createLogger('decision-service:reasoning');
 

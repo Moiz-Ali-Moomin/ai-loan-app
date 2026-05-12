@@ -2,7 +2,7 @@
  * Temporal worker bootstrap.
  * Registered as a NestJS lifecycle hook — starts alongside the HTTP server.
  */
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, type OnModuleInit, type OnModuleDestroy } from '@nestjs/common';
 import { Worker, NativeConnection } from '@temporalio/worker';
 import { createLogger } from '@loan-platform/logger';
 import { DecisionGraphActivities, injectActivityDependencies } from './decision-graph.activities.js';

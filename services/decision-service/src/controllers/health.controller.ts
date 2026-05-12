@@ -1,6 +1,6 @@
 import { Controller, Get, Inject } from '@nestjs/common';
-import { HealthCheck, HealthCheckService, HealthIndicatorResult } from '@nestjs/terminus';
-import { DB_POOL_TOKEN } from '../repositories/decision.repository';
+import { HealthCheck, HealthCheckService, type HealthIndicatorResult } from '@nestjs/terminus';
+import { DB_POOL_TOKEN } from '../repositories/decision.repository.js';
 
 @Controller()
 export class HealthController {

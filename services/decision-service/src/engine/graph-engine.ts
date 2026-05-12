@@ -4,9 +4,9 @@ import { withSpan } from '@loan-platform/telemetry';
 import { DecisionFlow } from '../domain/decision-flow.entity.js';
 import { DecisionExecution } from '../domain/decision-execution.entity.js';
 import {
-  ExecutionContext,
   DecisionNodeType,
   NodeExecutionStatus,
+  type ExecutionContext,
   type FinalDecision,
 } from '../common/types.js';
 import {

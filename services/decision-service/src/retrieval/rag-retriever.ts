@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { DatabasePool as Pool } from '@loan-platform/database';
 import { createLogger } from '@loan-platform/logger';
 import { withSpan } from '@loan-platform/telemetry';
-import type { RetrievalResult } from '../schemas/decision.schema';
+import type { RetrievalResult } from '../schemas/decision.schema.js';
 
 const logger = createLogger('decision-service:retrieval');
 

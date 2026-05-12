@@ -1,11 +1,11 @@
 import {
-  CanActivate,
-  ExecutionContext,
   Injectable,
   UnauthorizedException,
   ForbiddenException,
   createParamDecorator,
   SetMetadata,
+  type CanActivate,
+  type ExecutionContext,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import * as jwt from 'jsonwebtoken';

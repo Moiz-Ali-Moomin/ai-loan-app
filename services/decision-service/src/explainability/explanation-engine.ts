@@ -7,8 +7,8 @@ import type {
   RiskSignal,
   DecisionOutcome,
   EscalationReason,
-} from '../schemas/decision.schema';
-import type { AIReasoningOutput } from '../reasoning/ai-reasoning-client';
+} from '../schemas/decision.schema.js';
+import type { AIReasoningOutput } from '../reasoning/ai-reasoning-client.js';
 
 const logger = createLogger('decision-service:explainability');
 
@@ -95,6 +95,7 @@ export class ExplanationEngine {
         if (escalations.includes('LOW_CONFIDENCE')) return `Referred for manual review due to insufficient automated confidence. ${negCount} risk signal(s) require human evaluation.`;
         return `Referred for manual review. ${escalations.length} escalation trigger(s): ${escalations.join(', ')}.`;
       case 'ESCALATE': return `Escalated to senior underwriting team. ${escalations.join(', ')} — requires specialist review.`;
+      default: return `Decision: ${decision as string}`;
     }
   }
 

@@ -9,15 +9,15 @@ import type {
   ReviewDecisionRequest,
   DecisionResponse,
   DecisionType,
-} from '../schemas/decision.schema';
-import { RAGRetriever } from '../retrieval/rag-retriever';
-import { PolicyEvaluator, type PolicyEvaluationOutput } from '../policies/policy-evaluator';
-import { AIReasoningClient } from '../reasoning/ai-reasoning-client';
-import { ConfidenceScorer } from '../scoring/confidence-scorer';
-import { ExplanationEngine } from '../explainability/explanation-engine';
-import { DecisionRepository } from '../repositories/decision.repository';
-import { AuditClient } from '../audit/audit-client';
-import { DecisionEventPublisher } from '../events/decision-event-publisher';
+} from '../schemas/decision.schema.js';
+import { RAGRetriever } from '../retrieval/rag-retriever.js';
+import { PolicyEvaluator, type PolicyEvaluationOutput } from '../policies/policy-evaluator.js';
+import { AIReasoningClient } from '../reasoning/ai-reasoning-client.js';
+import { ConfidenceScorer } from '../scoring/confidence-scorer.js';
+import { ExplanationEngine } from '../explainability/explanation-engine.js';
+import { DecisionRepository } from '../repositories/decision.repository.js';
+import { AuditClient } from '../audit/audit-client.js';
+import { DecisionEventPublisher } from '../events/decision-event-publisher.js';
 
 const logger = createLogger('decision-service:pipeline');
 
@@ -151,9 +151,9 @@ export class DecisionPipeline {
           decisionId, decisionType, decision: scoringOutput.finalDecision,
           riskScore: scoringOutput.riskScore, confidence: scoringOutput.confidence,
           riskLevel: scoringOutput.riskLevel, escalationReasons: scoringOutput.escalationReasons,
-          retrievedDocuments: ragOutput.results.map(r => r.document_id),
+          retrievedDocuments: ragOutput.results.map((r: { document_id: string }) => r.document_id),
           aiRequestId: aiOutput.requestId,
-          policyOutcomes: policyOutput.outcomes.map(o => ({ path: o.policy_path, passed: o.passed, hardBlock: o.hard_block })),
+          policyOutcomes: policyOutput.outcomes.map((o: { policy_path: string; passed: boolean; hard_block: boolean }) => ({ path: o.policy_path, passed: o.passed, hardBlock: o.hard_block })),
         },
         metadata: { traceId, correlationId, version: '1.0', environment: process.env['NODE_ENV'] ?? 'production' },
       });
@@ -223,6 +223,7 @@ export class DecisionPipeline {
       case 'AML': return ['aml_policy', 'sanctions_policy', 'compliance_manual'];
       case 'UNDERWRITING': return ['underwriting_sop', 'credit_policy', 'risk_policy', 'compliance_manual'];
       case 'REVIEW': return ['kyc_guideline', 'aml_policy', 'underwriting_sop', 'risk_policy', 'compliance_manual'];
+      default: return [];
     }
   }
 }

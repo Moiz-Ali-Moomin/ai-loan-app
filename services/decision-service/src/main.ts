@@ -1,9 +1,9 @@
 import './instrumentation';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { createLogger } from '@loan-platform/logger';
-import { DecisionModule } from './decision.module';
+import { DecisionModule } from './decision.module.js';
 
 const logger = createLogger('decision-service');
 
