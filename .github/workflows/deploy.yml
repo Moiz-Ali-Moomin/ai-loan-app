@@ -37,14 +37,16 @@ jobs:
             git diff --name-only "$BASE" "$HEAD" | grep -q "^$1" && echo "true" || echo "false"
           }
 
-          echo "infra=$(    changed 'infra/'           )" >> "$GITHUB_OUTPUT"
-          echo "packages=$( changed 'packages/'        )" >> "$GITHUB_OUTPUT"
-          echo "gateway=$(  changed 'services/api-gateway'       )" >> "$GITHUB_OUTPUT"
-          echo "workflow=$( changed 'services/workflow-service'  )" >> "$GITHUB_OUTPUT"
-          echo "policy=$(   changed 'services/policy-service'    )" >> "$GITHUB_OUTPUT"
-          echo "ai=$(       changed 'services/ai-execution-service' )" >> "$GITHUB_OUTPUT"
-          echo "audit=$(    changed 'services/audit-service'     )" >> "$GITHUB_OUTPUT"
-          echo "events=$(   changed 'services/event-consumer'    )" >> "$GITHUB_OUTPUT"
+          echo "infra=$(      changed 'infra/'                        )" >> "$GITHUB_OUTPUT"
+          echo "packages=$(   changed 'packages/'                     )" >> "$GITHUB_OUTPUT"
+          echo "gateway=$(    changed 'services/api-gateway'          )" >> "$GITHUB_OUTPUT"
+          echo "workflow=$(   changed 'services/workflow-service'     )" >> "$GITHUB_OUTPUT"
+          echo "policy=$(     changed 'services/policy-service'       )" >> "$GITHUB_OUTPUT"
+          echo "ai=$(         changed 'services/ai-execution-service' )" >> "$GITHUB_OUTPUT"
+          echo "audit=$(      changed 'services/audit-service'        )" >> "$GITHUB_OUTPUT"
+          echo "events=$(     changed 'services/event-consumer'       )" >> "$GITHUB_OUTPUT"
+          echo "decision=$(   changed 'services/decision-service'     )" >> "$GITHUB_OUTPUT"
+          echo "frontend=$(   changed 'services/frontend'             )" >> "$GITHUB_OUTPUT"
 
       # ── Write the production .env on the VPS ─────────────────
       # All secrets come from the GitHub Actions "production" environment.
@@ -121,11 +123,13 @@ jobs:
           AI:        ${{ steps.changes.outputs.ai }}
           AUDIT:     ${{ steps.changes.outputs.audit }}
           EVENTS:    ${{ steps.changes.outputs.events }}
+          DECISION:  ${{ steps.changes.outputs.decision }}
+          FRONTEND:  ${{ steps.changes.outputs.frontend }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: root
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: INFRA,PACKAGES,GATEWAY,WORKFLOW,POLICY,AI,AUDIT,EVENTS
+          envs: INFRA,PACKAGES,GATEWAY,WORKFLOW,POLICY,AI,AUDIT,EVENTS,DECISION,FRONTEND
           # 15-minute timeout: each service image takes ~30s to compile
           command_timeout: 15m
           script: |
@@ -135,14 +139,16 @@ jobs:
             SERVICES=""
             # A packages/ change means every service needs a rebuild
             if [ "$PACKAGES" = "true" ] || [ "$INFRA" = "true" ]; then
-              SERVICES="api-gateway workflow-service policy-service ai-execution-service audit-service event-consumer"
+              SERVICES="api-gateway workflow-service policy-service ai-execution-service audit-service event-consumer decision-service frontend"
             else
-              [ "$GATEWAY"  = "true" ] && SERVICES="$SERVICES api-gateway"
-              [ "$WORKFLOW" = "true" ] && SERVICES="$SERVICES workflow-service"
-              [ "$POLICY"   = "true" ] && SERVICES="$SERVICES policy-service"
-              [ "$AI"       = "true" ] && SERVICES="$SERVICES ai-execution-service"
-              [ "$AUDIT"    = "true" ] && SERVICES="$SERVICES audit-service"
-              [ "$EVENTS"   = "true" ] && SERVICES="$SERVICES event-consumer"
+              [ "$GATEWAY"   = "true" ] && SERVICES="$SERVICES api-gateway"
+              [ "$WORKFLOW"  = "true" ] && SERVICES="$SERVICES workflow-service"
+              [ "$POLICY"    = "true" ] && SERVICES="$SERVICES policy-service"
+              [ "$AI"        = "true" ] && SERVICES="$SERVICES ai-execution-service"
+              [ "$AUDIT"     = "true" ] && SERVICES="$SERVICES audit-service"
+              [ "$EVENTS"    = "true" ] && SERVICES="$SERVICES event-consumer"
+              [ "$DECISION"  = "true" ] && SERVICES="$SERVICES decision-service"
+              [ "$FRONTEND"  = "true" ] && SERVICES="$SERVICES frontend"
             fi
 
             if [ -n "$SERVICES" ]; then
@@ -167,11 +173,13 @@ jobs:
           AI:        ${{ steps.changes.outputs.ai }}
           AUDIT:     ${{ steps.changes.outputs.audit }}
           EVENTS:    ${{ steps.changes.outputs.events }}
+          DECISION:  ${{ steps.changes.outputs.decision }}
+          FRONTEND:  ${{ steps.changes.outputs.frontend }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: root
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: INFRA,PACKAGES,GATEWAY,WORKFLOW,POLICY,AI,AUDIT,EVENTS
+          envs: INFRA,PACKAGES,GATEWAY,WORKFLOW,POLICY,AI,AUDIT,EVENTS,DECISION,FRONTEND
           command_timeout: 10m
           script: |
             set -e
@@ -179,14 +187,16 @@ jobs:
 
             SERVICES=""
             if [ "$PACKAGES" = "true" ] || [ "$INFRA" = "true" ]; then
-              SERVICES="api-gateway workflow-service policy-service ai-execution-service audit-service event-consumer"
+              SERVICES="api-gateway workflow-service policy-service ai-execution-service audit-service event-consumer decision-service frontend"
             else
-              [ "$GATEWAY"  = "true" ] && SERVICES="$SERVICES api-gateway"
-              [ "$WORKFLOW" = "true" ] && SERVICES="$SERVICES workflow-service"
-              [ "$POLICY"   = "true" ] && SERVICES="$SERVICES policy-service"
-              [ "$AI"       = "true" ] && SERVICES="$SERVICES ai-execution-service"
-              [ "$AUDIT"    = "true" ] && SERVICES="$SERVICES audit-service"
-              [ "$EVENTS"   = "true" ] && SERVICES="$SERVICES event-consumer"
+              [ "$GATEWAY"   = "true" ] && SERVICES="$SERVICES api-gateway"
+              [ "$WORKFLOW"  = "true" ] && SERVICES="$SERVICES workflow-service"
+              [ "$POLICY"    = "true" ] && SERVICES="$SERVICES policy-service"
+              [ "$AI"        = "true" ] && SERVICES="$SERVICES ai-execution-service"
+              [ "$AUDIT"     = "true" ] && SERVICES="$SERVICES audit-service"
+              [ "$EVENTS"    = "true" ] && SERVICES="$SERVICES event-consumer"
+              [ "$DECISION"  = "true" ] && SERVICES="$SERVICES decision-service"
+              [ "$FRONTEND"  = "true" ] && SERVICES="$SERVICES frontend"
             fi
 
             if [ -n "$SERVICES" ]; then
