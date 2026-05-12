@@ -1,4 +1,4 @@
-import './instrumentation';
+import './instrumentation.js';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
