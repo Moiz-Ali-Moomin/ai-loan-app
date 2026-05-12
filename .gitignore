@@ -17,4 +17,5 @@ infra/k8s/base/secrets.yaml
 # Graphify — exclude all generated output
 graphify-out/
 .graphifyignore
+graphify.md
 CLAUDE.md
