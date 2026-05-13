@@ -64,32 +64,31 @@ export default async function loanRoutes(fastify: FastifyInstance) {
         const body = CreateLoanRequestSchema.parse(request.body);
         const correlationId = (request.headers['x-correlation-id'] as string) ?? randomUUID();
         const traceId = (request.headers['x-trace-id'] as string) ?? randomUUID();
-        const pool = fastify.pg;
+        const prisma = fastify.prisma;
 
-        // --- Idempotency: return cached response if key already used ---
-        const { rows: existing } = await pool.query(
-          `SELECT id, status FROM loan_requests WHERE idempotency_key = $1 LIMIT 1`,
-          [body.idempotencyKey]
-        );
-        if (existing.length > 0) {
-          const prev = existing[0] as { id: string; status: string };
+        // Idempotency: return cached response if key already used
+        const existing = await prisma.loanRequest.findUnique({
+          where: { idempotencyKey: body.idempotencyKey },
+          select: { id: true, status: true },
+        });
+        if (existing) {
           logger.info('Idempotent loan request — returning existing', {
             idempotencyKey: body.idempotencyKey,
-            loanRequestId: prev.id,
+            loanRequestId: existing.id,
           });
           return reply.status(200).send({
             success: true,
             data: {
-              loanRequestId: prev.id,
-              workflowId: `loan-${prev.id}`,
-              status: prev.status,
+              loanRequestId: existing.id,
+              workflowId: `loan-${existing.id}`,
+              status: existing.status,
               message: 'Loan application already submitted (idempotent)',
             },
             meta: { traceId, requestId: request.id, timestamp: new Date().toISOString() },
           });
         }
 
-        // --- Encrypt PII fields before persistence ---
+        // Encrypt PII fields before persistence
         const keyVersion = getKeyVersion();
         const encFirstName  = encryptPII(body.applicant.firstName);
         const encLastName   = encryptPII(body.applicant.lastName);
@@ -109,45 +108,37 @@ export default async function loanRoutes(fastify: FastifyInstance) {
           correlationId,
         });
 
-        // Persist to DB — PII columns hold encrypted envelopes
-        await pool.query(
-          `INSERT INTO loan_requests (
-            id, tenant_id, status, loan_type, requested_amount, requested_term_months,
-            purpose, applicant_id, applicant_first_name, applicant_last_name,
-            applicant_email, applicant_phone, applicant_date_of_birth, applicant_national_id,
-            applicant_employment_status, applicant_annual_income, applicant_credit_score,
-            applicant_existing_debt, applicant_kyc_verified, applicant_address,
-            applicant_address_enc, business_info, collateral, metadata,
-            idempotency_key, pii_key_version
-          ) VALUES ($1,$2,'PENDING',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)`,
-          [
-            loanRequestId,
-            body.tenantId,
-            body.loanType,
-            body.requestedAmount,
-            body.requestedTermMonths,
-            body.purpose,
-            randomUUID(),
-            encFirstName,
-            encLastName,
-            body.applicant.email,       // email not encrypted — used for notifications
-            encPhone,
-            body.applicant.dateOfBirth,
-            encNationalId,
-            body.applicant.employmentStatus,
-            body.applicant.annualIncome,
-            body.applicant.creditScore,
-            body.applicant.existingDebt,
-            body.applicant.kycVerified,
-            JSON.stringify(body.applicant.address), // plaintext copy for workflow (will be removed after migration)
-            encAddress,                 // encrypted copy — canonical after migration complete
-            body.businessInfo ? JSON.stringify(body.businessInfo) : null,
-            body.collateral ? JSON.stringify(body.collateral) : null,
-            JSON.stringify({ correlationId, traceId }),
-            body.idempotencyKey,
-            keyVersion,
-          ]
-        );
+        // Persist loan request via Prisma
+        await prisma.loanRequest.create({
+          data: {
+            id: loanRequestId,
+            tenantId: body.tenantId,
+            status: 'PENDING',
+            loanType: body.loanType,
+            requestedAmount: body.requestedAmount,
+            requestedTermMonths: body.requestedTermMonths,
+            purpose: body.purpose,
+            applicantId: randomUUID(),
+            applicantFirstName: encFirstName,
+            applicantLastName: encLastName,
+            applicantEmail: body.applicant.email,
+            applicantPhone: encPhone,
+            applicantDateOfBirth: new Date(body.applicant.dateOfBirth),
+            applicantNationalId: encNationalId,
+            applicantEmploymentStatus: body.applicant.employmentStatus,
+            applicantAnnualIncome: body.applicant.annualIncome,
+            applicantCreditScore: body.applicant.creditScore,
+            applicantExistingDebt: body.applicant.existingDebt,
+            applicantKycVerified: body.applicant.kycVerified,
+            applicantAddress: body.applicant.address as object,
+            applicantAddressEnc: encAddress,
+            businessInfo: body.businessInfo ? (body.businessInfo as object) : undefined,
+            collateral: body.collateral ? (body.collateral as object) : undefined,
+            metadata: { correlationId, traceId },
+            idempotencyKey: body.idempotencyKey,
+            piiKeyVersion: keyVersion,
+          },
+        });
 
         // Start Temporal workflow
         const connection = await Connection.connect({ address: config.temporal.address });
@@ -164,20 +155,18 @@ export default async function loanRoutes(fastify: FastifyInstance) {
           }],
         });
 
-        await pool.query(
-          `INSERT INTO workflow_runs
-             (id, tenant_id, loan_request_id, temporal_workflow_id, temporal_run_id,
-              status, trace_id, correlation_id)
-           VALUES (uuid_generate_v4(), $1, $2, $3, $4, 'RUNNING', $5, $6)`,
-          [
-            body.tenantId,
+        // Persist workflow run via Prisma
+        await prisma.workflowRun.create({
+          data: {
+            tenantId: body.tenantId,
             loanRequestId,
-            handle.workflowId,
-            handle.firstExecutionRunId,
+            temporalWorkflowId: handle.workflowId,
+            temporalRunId: handle.firstExecutionRunId,
+            status: 'RUNNING',
             traceId,
             correlationId,
-          ]
-        );
+          },
+        });
 
         const producer = fastify.kafkaProducer as KafkaProducerClient;
         await producer.publish(
@@ -210,15 +199,14 @@ export default async function loanRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // Get loan request by ID
+  // Get loan request by ID — complex join with downstream tables; $queryRawUnsafe preserves snake_case
   fastify.get<{ Params: { id: string } }>(
     '/loans/:id',
     { preHandler: [requireAuth] },
     async (request, reply) => {
       const { id } = request.params;
-      const pool = fastify.pg;
 
-      const { rows } = await pool.query(
+      const rows = await fastify.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
         `SELECT lr.*, ld.status as decision_status, ld.approved_amount, ld.interest_rate,
                 wr.temporal_workflow_id, wr.status as workflow_status, wr.current_step,
                 ad.risk_score, ad.risk_level, ad.recommendation as ai_recommendation
@@ -226,8 +214,8 @@ export default async function loanRoutes(fastify: FastifyInstance) {
          LEFT JOIN loan_decisions ld ON ld.loan_request_id = lr.id
          LEFT JOIN workflow_runs wr ON wr.loan_request_id = lr.id
          LEFT JOIN ai_decisions ad ON ad.loan_request_id = lr.id
-         WHERE lr.id = $1`,
-        [id]
+         WHERE lr.id = $1::uuid`,
+        id,
       );
 
       if (rows.length === 0) {
@@ -241,48 +229,46 @@ export default async function loanRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // List loan requests
+  // List loan requests — joins workflow_runs for workflow status
   fastify.get<{ Querystring: { page?: number; limit?: number; status?: string; tenantId?: string } }>(
     '/loans',
     { preHandler: [requireAuth] },
     async (request, reply) => {
       const { page = 1, limit = 20, status, tenantId } = request.query;
-      const offset = (page - 1) * limit;
-      const pool = fastify.pg;
+      const offset = (Number(page) - 1) * Number(limit);
 
-      const conditions: string[] = [];
-      const params: unknown[] = [];
-      let paramIdx = 1;
+      // Build parameterized WHERE clause — only hard-coded strings are interpolated
+      const conditions: string[] = ['1=1'];
+      const filterParams: unknown[] = [];
+      let idx = 1;
+      if (status)   { conditions.push(`lr.status = $${idx++}`);           filterParams.push(status); }
+      if (tenantId) { conditions.push(`lr.tenant_id = $${idx++}::uuid`);  filterParams.push(tenantId); }
+      const where = conditions.join(' AND ');
 
-      if (status) { conditions.push(`lr.status = $${paramIdx++}`); params.push(status); }
-      if (tenantId) { conditions.push(`lr.tenant_id = $${paramIdx++}`); params.push(tenantId); }
-
-      const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      params.push(limit, offset);
-
-      const { rows } = await pool.query(
+      const rows = await fastify.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
         `SELECT lr.id, lr.tenant_id, lr.status, lr.loan_type, lr.requested_amount,
-                lr.applicant_email, lr.submitted_at,
+                lr.applicant_email, lr.applicant_first_name, lr.applicant_last_name,
+                lr.applicant_credit_score, lr.submitted_at,
                 wr.status as workflow_status, wr.current_step
          FROM loan_requests lr
          LEFT JOIN workflow_runs wr ON wr.loan_request_id = lr.id
-         ${where}
+         WHERE ${where}
          ORDER BY lr.submitted_at DESC
-         LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
-        params
+         LIMIT $${idx} OFFSET $${idx + 1}`,
+        ...filterParams, Number(limit), offset,
       );
 
-      const countResult = await pool.query(
-        `SELECT COUNT(*) FROM loan_requests lr ${where}`,
-        params.slice(0, -2)
+      const countResult = await fastify.prisma.$queryRawUnsafe<Array<{ count: string }>>(
+        `SELECT COUNT(*) as count FROM loan_requests lr WHERE ${where}`,
+        ...filterParams,
       );
 
       return reply.send({
         success: true,
         data: rows,
-        total: parseInt(countResult.rows[0].count, 10),
-        page,
-        limit,
+        total: parseInt(countResult[0]?.count ?? '0', 10),
+        page: Number(page),
+        limit: Number(limit),
       });
     }
   );
@@ -292,10 +278,11 @@ export default async function loanRoutes(fastify: FastifyInstance) {
     '/loans/:id/workflow',
     { preHandler: [requireAuth] },
     async (request, reply) => {
-      const pool = fastify.pg;
-      const { rows } = await pool.query(
-        'SELECT * FROM workflow_runs WHERE loan_request_id = $1 ORDER BY started_at DESC LIMIT 1',
-        [request.params.id]
+      const rows = await fastify.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+        `SELECT * FROM workflow_runs
+         WHERE loan_request_id = $1::uuid
+         ORDER BY started_at DESC LIMIT 1`,
+        request.params.id,
       );
 
       if (rows.length === 0) {
@@ -342,11 +329,12 @@ export default async function loanRoutes(fastify: FastifyInstance) {
     '/loans/:id/audit',
     { preHandler: [requireAuth] },
     async (request, reply) => {
-      const pool = fastify.pg;
-      const { rows } = await pool.query(
+      const rows = await fastify.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
         `SELECT id, event_type, actor_type, service_name, payload, trace_id, correlation_id, created_at
-         FROM audit_logs WHERE loan_request_id = $1 ORDER BY created_at ASC`,
-        [request.params.id]
+         FROM audit_logs
+         WHERE loan_request_id = $1::uuid
+         ORDER BY created_at ASC`,
+        request.params.id,
       );
       return reply.send({ success: true, data: rows });
     }
@@ -358,9 +346,8 @@ export default async function loanRoutes(fastify: FastifyInstance) {
     { preHandler: [requireAuth] },
     async (request, reply) => {
       const { id } = request.params;
-      const pool = fastify.pg;
 
-      const { rows: decisionRows } = await pool.query(
+      const decisionRows = await fastify.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
         `SELECT ld.status, ld.rejection_reason, ld.decided_at,
                 ad.reasoning_factors, ad.risk_factors,
                 pe.violations, pe.flags,
@@ -369,16 +356,16 @@ export default async function loanRoutes(fastify: FastifyInstance) {
          JOIN loan_requests lr ON lr.id = ld.loan_request_id
          LEFT JOIN ai_decisions ad ON ad.loan_request_id = ld.loan_request_id
          LEFT JOIN policy_evaluations pe ON pe.loan_request_id = ld.loan_request_id
-         WHERE ld.loan_request_id = $1
+         WHERE ld.loan_request_id = $1::uuid
          ORDER BY ld.decided_at DESC LIMIT 1`,
-        [id]
+        id,
       );
 
       if (decisionRows.length === 0) {
         return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'Decision not found' } });
       }
 
-      const decision = decisionRows[0] as Record<string, unknown>;
+      const decision = decisionRows[0];
 
       if (decision['status'] !== 'REJECTED') {
         return reply.status(400).send({
@@ -387,13 +374,11 @@ export default async function loanRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Build FCRA-compliant adverse action reasons from AI reasoning_factors + policy violations
       const reasoningFactors = (decision['reasoning_factors'] ?? decision['risk_factors'] ?? []) as Array<Record<string, unknown>>;
       const violations = (decision['violations'] ?? []) as Array<Record<string, unknown>>;
 
       const reasons: string[] = [];
 
-      // Top negative AI factors (max 4 — FCRA allows up to 4 principal reasons)
       const negativeFactors = reasoningFactors
         .filter((f) => f['impact'] === 'NEGATIVE')
         .sort((a, b) => Number(b['weight'] ?? 0) - Number(a['weight'] ?? 0))
@@ -403,7 +388,6 @@ export default async function loanRoutes(fastify: FastifyInstance) {
         reasons.push(String(factor['description'] ?? factor['factor']));
       }
 
-      // Policy hard violations
       for (const v of violations) {
         if (v['severity'] === 'HARD' && reasons.length < 4) {
           reasons.push(String(v['message'] ?? v['rule']));
@@ -413,14 +397,13 @@ export default async function loanRoutes(fastify: FastifyInstance) {
       const decidedAt = new Date(String(decision['decided_at']));
       const deadlineAt = new Date(decidedAt.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-      // Record notice generation
-      await pool.query(
+      await fastify.prisma.$executeRawUnsafe(
         `INSERT INTO adverse_action_notices
            (loan_request_id, tenant_id, deadline_at, delivery_method, reasons)
-         SELECT $1, lr.tenant_id, $2, 'DOWNLOAD', $3::jsonb
-         FROM loan_requests lr WHERE lr.id = $1
+         SELECT $1::uuid, lr.tenant_id, $2::timestamptz, 'DOWNLOAD', $3::jsonb
+         FROM loan_requests lr WHERE lr.id = $1::uuid
          ON CONFLICT DO NOTHING`,
-        [id, deadlineAt.toISOString(), JSON.stringify(reasons)]
+        id, deadlineAt.toISOString(), JSON.stringify(reasons),
       );
 
       return reply.send({

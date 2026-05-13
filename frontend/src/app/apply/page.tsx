@@ -155,6 +155,8 @@ function SuccessScreen({ loanId }: { loanId: string }) {
 export default function ApplyPage() {
   const [form, setForm] = useState<FormState>(INITIAL);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
+  // Stable key for idempotent submission — regenerates only when the form resets
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
 
   const set = (field: keyof FormState) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -164,6 +166,7 @@ export default function ApplyPage() {
     mutationFn: () =>
       publicLoansApi.submit({
         tenantId: DEFAULT_TENANT,
+        idempotencyKey,
         loanType: form.loanType,
         requestedAmount: parseFloat(form.requestedAmount),
         requestedTermMonths: parseInt(form.requestedTermMonths, 10),
