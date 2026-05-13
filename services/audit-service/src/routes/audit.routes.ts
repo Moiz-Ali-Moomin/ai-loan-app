@@ -1,11 +1,12 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { createLogger } from '@loan-platform/logger';
+import { prisma } from '@loan-platform/database';
 import { AuditRepository } from '../repository/audit.repository.js';
 
 const logger = createLogger('audit-service:routes');
 
 export default async function auditRoutes(fastify: FastifyInstance) {
-  const repo = new AuditRepository(fastify.pg);
+  const repo = new AuditRepository(prisma);
 
   // Create audit record
   fastify.post(
@@ -68,14 +69,18 @@ export default async function auditRoutes(fastify: FastifyInstance) {
     '/audit/activity',
     async (request: FastifyRequest<{ Querystring: { limit?: number; tenantId?: string } }>, reply: FastifyReply) => {
       const { limit = 100, tenantId } = request.query;
-      const conditions = tenantId ? 'WHERE tenant_id = $2' : '';
-      const params = tenantId ? [limit, tenantId] : [limit];
 
-      const { rows } = await fastify.pg.query(
-        `SELECT id, event_type, actor_type, service_name, loan_request_id, trace_id, created_at
-         FROM audit_logs ${conditions} ORDER BY created_at DESC LIMIT $1`,
-        params
-      );
+      const rows = tenantId
+        ? await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+            `SELECT id, event_type, actor_type, service_name, loan_request_id, trace_id, created_at
+             FROM audit_logs WHERE tenant_id = $1::uuid ORDER BY created_at DESC LIMIT $2`,
+            tenantId, Number(limit),
+          )
+        : await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+            `SELECT id, event_type, actor_type, service_name, loan_request_id, trace_id, created_at
+             FROM audit_logs ORDER BY created_at DESC LIMIT $1`,
+            Number(limit),
+          );
 
       return reply.send({ success: true, data: rows });
     }

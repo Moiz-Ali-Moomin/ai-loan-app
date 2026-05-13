@@ -11,6 +11,7 @@ import { createPool } from '@loan-platform/database';
 import { createKafkaClient, KafkaProducerClient, ensureTopicsExist } from '@loan-platform/kafka';
 import { config } from './config/index.js';
 import loanRoutes from './routes/loans.js';
+import publicLoanRoutes from './routes/public-loans.js';
 import authRoutes from './routes/auth.js';
 import healthRoutes from './routes/health.js';
 import proxyRoutes from './routes/proxy.js';
@@ -116,6 +117,7 @@ async function buildServer() {
   await fastify.register(healthRoutes);
   await fastify.register(authRoutes, { prefix: '/api/v1' });
   await fastify.register(loanRoutes, { prefix: '/api/v1' });
+  await fastify.register(publicLoanRoutes, { prefix: '/api/v1' });
   await fastify.register(proxyRoutes, { prefix: '/api/v1' });
 
   // Global error handler

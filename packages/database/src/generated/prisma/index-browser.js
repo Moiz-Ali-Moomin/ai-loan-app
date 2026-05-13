@@ -235,6 +235,272 @@ exports.Prisma.DocumentEmbeddingScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.PolicyVersionScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  version: 'version',
+  tenantId: 'tenantId',
+  description: 'description',
+  content: 'content',
+  regoContent: 'regoContent',
+  checksum: 'checksum',
+  isActive: 'isActive',
+  effectiveFrom: 'effectiveFrom',
+  effectiveTo: 'effectiveTo',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.AiDecisionScalarFieldEnum = {
+  id: 'id',
+  loanRequestId: 'loanRequestId',
+  workflowRunId: 'workflowRunId',
+  tenantId: 'tenantId',
+  riskScore: 'riskScore',
+  riskLevel: 'riskLevel',
+  recommendation: 'recommendation',
+  confidence: 'confidence',
+  reasoning: 'reasoning',
+  riskFactors: 'riskFactors',
+  reasoningFactors: 'reasoningFactors',
+  suggestedTerms: 'suggestedTerms',
+  modelVersion: 'modelVersion',
+  promptVersion: 'promptVersion',
+  promptStorageKey: 'promptStorageKey',
+  responseStorageKey: 'responseStorageKey',
+  tokensUsed: 'tokensUsed',
+  latencyMs: 'latencyMs',
+  decidedAt: 'decidedAt',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.PolicyEvaluationScalarFieldEnum = {
+  id: 'id',
+  loanRequestId: 'loanRequestId',
+  workflowRunId: 'workflowRunId',
+  tenantId: 'tenantId',
+  policyPath: 'policyPath',
+  policyVersion: 'policyVersion',
+  decision: 'decision',
+  allow: 'allow',
+  violations: 'violations',
+  flags: 'flags',
+  inputSnapshot: 'inputSnapshot',
+  evaluationMetadata: 'evaluationMetadata',
+  durationMs: 'durationMs',
+  evaluatedAt: 'evaluatedAt',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.FraudAnalysisScalarFieldEnum = {
+  id: 'id',
+  loanRequestId: 'loanRequestId',
+  workflowRunId: 'workflowRunId',
+  tenantId: 'tenantId',
+  fraudScore: 'fraudScore',
+  isSuspicious: 'isSuspicious',
+  flags: 'flags',
+  modelVersion: 'modelVersion',
+  analyzedAt: 'analyzedAt',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.LoanDecisionScalarFieldEnum = {
+  id: 'id',
+  loanRequestId: 'loanRequestId',
+  workflowRunId: 'workflowRunId',
+  tenantId: 'tenantId',
+  status: 'status',
+  approvedAmount: 'approvedAmount',
+  interestRate: 'interestRate',
+  termMonths: 'termMonths',
+  rejectionReason: 'rejectionReason',
+  conditions: 'conditions',
+  decidedBy: 'decidedBy',
+  policyVersion: 'policyVersion',
+  aiDecisionId: 'aiDecisionId',
+  reviewerId: 'reviewerId',
+  decidedAt: 'decidedAt',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.ApprovalRecordScalarFieldEnum = {
+  id: 'id',
+  loanRequestId: 'loanRequestId',
+  workflowRunId: 'workflowRunId',
+  tenantId: 'tenantId',
+  reviewerId: 'reviewerId',
+  reason: 'reason',
+  riskScore: 'riskScore',
+  aiRecommendation: 'aiRecommendation',
+  policyFlags: 'policyFlags',
+  status: 'status',
+  decision: 'decision',
+  reviewerNotes: 'reviewerNotes',
+  assignedAt: 'assignedAt',
+  dueAt: 'dueAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.AdverseActionNoticeScalarFieldEnum = {
+  id: 'id',
+  loanRequestId: 'loanRequestId',
+  tenantId: 'tenantId',
+  generatedAt: 'generatedAt',
+  deliveredAt: 'deliveredAt',
+  deliveryMethod: 'deliveryMethod',
+  deadlineAt: 'deadlineAt',
+  contentKey: 'contentKey',
+  reasons: 'reasons',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.GovernanceDecisionScalarFieldEnum = {
+  id: 'id',
+  applicationId: 'applicationId',
+  tenantId: 'tenantId',
+  decisionType: 'decisionType',
+  decision: 'decision',
+  confidence: 'confidence',
+  riskScore: 'riskScore',
+  riskLevel: 'riskLevel',
+  riskSignals: 'riskSignals',
+  policyOutcomes: 'policyOutcomes',
+  retrievedContextCount: 'retrievedContextCount',
+  aiRequestId: 'aiRequestId',
+  explanation: 'explanation',
+  reasons: 'reasons',
+  policyFailures: 'policyFailures',
+  recommendedActions: 'recommendedActions',
+  escalationReasons: 'escalationReasons',
+  auditReference: 'auditReference',
+  workflowRunId: 'workflowRunId',
+  correlationId: 'correlationId',
+  processingLatencyMs: 'processingLatencyMs',
+  decidedAt: 'decidedAt'
+};
+
+exports.Prisma.DecisionFlowScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  name: 'name',
+  description: 'description',
+  version: 'version',
+  status: 'status',
+  createdBy: 'createdBy',
+  updatedBy: 'updatedBy',
+  metadata: 'metadata',
+  tags: 'tags',
+  publishedAt: 'publishedAt',
+  deprecatedAt: 'deprecatedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.DecisionNodeScalarFieldEnum = {
+  id: 'id',
+  flowId: 'flowId',
+  tenantId: 'tenantId',
+  name: 'name',
+  type: 'type',
+  config: 'config',
+  nextNodeId: 'nextNodeId',
+  fallbackNodeId: 'fallbackNodeId',
+  branches: 'branches',
+  timeoutMs: 'timeoutMs',
+  retryAttempts: 'retryAttempts',
+  retryDelayMs: 'retryDelayMs',
+  positionX: 'positionX',
+  positionY: 'positionY',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.FlowSnapshotScalarFieldEnum = {
+  id: 'id',
+  flowId: 'flowId',
+  tenantId: 'tenantId',
+  version: 'version',
+  checksum: 'checksum',
+  snapshot: 'snapshot',
+  publishedBy: 'publishedBy',
+  publishedAt: 'publishedAt'
+};
+
+exports.Prisma.DecisionExecutionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  flowId: 'flowId',
+  flowSnapshotId: 'flowSnapshotId',
+  applicationId: 'applicationId',
+  workflowRunId: 'workflowRunId',
+  temporalWorkflowId: 'temporalWorkflowId',
+  temporalRunId: 'temporalRunId',
+  status: 'status',
+  input: 'input',
+  output: 'output',
+  executionTrace: 'executionTrace',
+  finalDecision: 'finalDecision',
+  riskScore: 'riskScore',
+  confidence: 'confidence',
+  explanation: 'explanation',
+  idempotencyKey: 'idempotencyKey',
+  correlationId: 'correlationId',
+  initiatedBy: 'initiatedBy',
+  initiatedByType: 'initiatedByType',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  pausedAt: 'pausedAt',
+  timeoutAt: 'timeoutAt',
+  processingMs: 'processingMs',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.DecisionNodeExecutionScalarFieldEnum = {
+  id: 'id',
+  executionId: 'executionId',
+  tenantId: 'tenantId',
+  nodeId: 'nodeId',
+  nodeType: 'nodeType',
+  nodeName: 'nodeName',
+  status: 'status',
+  input: 'input',
+  output: 'output',
+  error: 'error',
+  durationMs: 'durationMs',
+  retryCount: 'retryCount',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt'
+};
+
+exports.Prisma.ApprovalRequestScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  executionId: 'executionId',
+  nodeId: 'nodeId',
+  applicationId: 'applicationId',
+  assignedTo: 'assignedTo',
+  assignedRole: 'assignedRole',
+  status: 'status',
+  priority: 'priority',
+  decision: 'decision',
+  decidedBy: 'decidedBy',
+  decidedAt: 'decidedAt',
+  decisionNotes: 'decisionNotes',
+  contextSnapshot: 'contextSnapshot',
+  dueAt: 'dueAt',
+  escalateAt: 'escalateAt',
+  escalatedTo: 'escalatedTo',
+  escalatedAt: 'escalatedAt',
+  delegatedFromId: 'delegatedFromId',
+  temporalWorkflowId: 'temporalWorkflowId',
+  temporalSignalName: 'temporalSignalName',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -272,7 +538,21 @@ exports.Prisma.ModelName = {
   LoanRequest: 'LoanRequest',
   WorkflowRun: 'WorkflowRun',
   AuditLog: 'AuditLog',
-  DocumentEmbedding: 'DocumentEmbedding'
+  DocumentEmbedding: 'DocumentEmbedding',
+  PolicyVersion: 'PolicyVersion',
+  AiDecision: 'AiDecision',
+  PolicyEvaluation: 'PolicyEvaluation',
+  FraudAnalysis: 'FraudAnalysis',
+  LoanDecision: 'LoanDecision',
+  ApprovalRecord: 'ApprovalRecord',
+  AdverseActionNotice: 'AdverseActionNotice',
+  GovernanceDecision: 'GovernanceDecision',
+  DecisionFlow: 'DecisionFlow',
+  DecisionNode: 'DecisionNode',
+  FlowSnapshot: 'FlowSnapshot',
+  DecisionExecution: 'DecisionExecution',
+  DecisionNodeExecution: 'DecisionNodeExecution',
+  ApprovalRequest: 'ApprovalRequest'
 };
 
 /**

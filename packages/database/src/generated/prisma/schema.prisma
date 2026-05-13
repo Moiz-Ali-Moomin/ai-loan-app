@@ -165,3 +165,363 @@ model DocumentEmbedding {
   @@index([tenantId, documentType, createdAt(sort: Desc)], map: "idx_doc_emb_tenant_type_created")
   @@map("document_embeddings")
 }
+
+model PolicyVersion {
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name          String    @db.VarChar(255)
+  version       String    @db.VarChar(50)
+  tenantId      String?   @map("tenant_id") @db.Uuid
+  description   String?
+  content       String
+  regoContent   String    @map("rego_content")
+  checksum      String    @db.VarChar(64)
+  isActive      Boolean   @default(false) @map("is_active")
+  effectiveFrom DateTime  @map("effective_from") @db.Timestamptz
+  effectiveTo   DateTime? @map("effective_to") @db.Timestamptz
+  createdBy     String?   @map("created_by") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+
+  @@index([name], map: "idx_policy_versions_name")
+  @@index([isActive], map: "idx_policy_versions_is_active")
+  @@index([tenantId], map: "idx_policy_versions_tenant_id")
+  @@map("policy_versions")
+}
+
+model AiDecision {
+  id                 String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  loanRequestId      String   @map("loan_request_id") @db.Uuid
+  workflowRunId      String?  @map("workflow_run_id") @db.Uuid
+  tenantId           String   @map("tenant_id") @db.Uuid
+  riskScore          Decimal  @map("risk_score") @db.Decimal(5, 4)
+  riskLevel          String   @map("risk_level") @db.VarChar(20)
+  recommendation     String   @db.VarChar(50)
+  confidence         Decimal  @db.Decimal(5, 4)
+  reasoning          String?
+  riskFactors        Json     @default("[]") @map("risk_factors")
+  reasoningFactors   Json     @default("[]") @map("reasoning_factors")
+  suggestedTerms     Json?    @map("suggested_terms")
+  modelVersion       String   @map("model_version") @db.VarChar(100)
+  promptVersion      String   @map("prompt_version") @db.VarChar(50)
+  promptStorageKey   String?  @map("prompt_storage_key") @db.VarChar(500)
+  responseStorageKey String?  @map("response_storage_key") @db.VarChar(500)
+  tokensUsed         Int?     @map("tokens_used")
+  latencyMs          Int?     @map("latency_ms")
+  decidedAt          DateTime @default(now()) @map("decided_at") @db.Timestamptz
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([loanRequestId], map: "idx_ai_decisions_loan_request_id")
+  @@index([workflowRunId], map: "idx_ai_decisions_workflow_run_id")
+  @@index([tenantId], map: "idx_ai_decisions_tenant_id")
+  @@index([riskLevel], map: "idx_ai_decisions_risk_level")
+  @@index([decidedAt(sort: Desc)], map: "idx_ai_decisions_decided_at")
+  @@map("ai_decisions")
+}
+
+model PolicyEvaluation {
+  id                 String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  loanRequestId      String   @map("loan_request_id") @db.Uuid
+  workflowRunId      String?  @map("workflow_run_id") @db.Uuid
+  tenantId           String   @map("tenant_id") @db.Uuid
+  policyPath         String   @map("policy_path") @db.VarChar(255)
+  policyVersion      String   @map("policy_version") @db.VarChar(50)
+  decision           String   @db.VarChar(50)
+  allow              Boolean
+  violations         Json     @default("[]")
+  flags              Json     @default("[]")
+  inputSnapshot      Json     @map("input_snapshot")
+  evaluationMetadata Json?    @map("evaluation_metadata")
+  durationMs         Int?     @map("duration_ms")
+  evaluatedAt        DateTime @default(now()) @map("evaluated_at") @db.Timestamptz
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([loanRequestId], map: "idx_policy_evals_loan_request_id")
+  @@index([workflowRunId], map: "idx_policy_evals_workflow_run_id")
+  @@index([decision], map: "idx_policy_evals_decision")
+  @@index([evaluatedAt(sort: Desc)], map: "idx_policy_evals_evaluated_at")
+  @@map("policy_evaluations")
+}
+
+model FraudAnalysis {
+  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  loanRequestId String   @map("loan_request_id") @db.Uuid
+  workflowRunId String?  @map("workflow_run_id") @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  fraudScore    Decimal  @map("fraud_score") @db.Decimal(5, 4)
+  isSuspicious  Boolean  @default(false) @map("is_suspicious")
+  flags         Json     @default("[]")
+  modelVersion  String   @map("model_version") @db.VarChar(100)
+  analyzedAt    DateTime @default(now()) @map("analyzed_at") @db.Timestamptz
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([loanRequestId], map: "idx_fraud_analyses_loan_request_id")
+  @@index([isSuspicious], map: "idx_fraud_analyses_is_suspicious")
+  @@map("fraud_analyses")
+}
+
+model LoanDecision {
+  id              String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  loanRequestId   String   @map("loan_request_id") @db.Uuid
+  workflowRunId   String?  @map("workflow_run_id") @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  status          String   @db.VarChar(50)
+  approvedAmount  Decimal? @map("approved_amount") @db.Decimal(15, 2)
+  interestRate    Decimal? @map("interest_rate") @db.Decimal(6, 4)
+  termMonths      Int?     @map("term_months")
+  rejectionReason String?  @map("rejection_reason")
+  conditions      Json?    @default("[]")
+  decidedBy       String   @map("decided_by") @db.VarChar(20)
+  policyVersion   String?  @map("policy_version") @db.VarChar(50)
+  aiDecisionId    String?  @map("ai_decision_id") @db.Uuid
+  reviewerId      String?  @map("reviewer_id") @db.Uuid
+  decidedAt       DateTime @default(now()) @map("decided_at") @db.Timestamptz
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([loanRequestId], map: "idx_loan_decisions_loan_request_id")
+  @@index([workflowRunId], map: "idx_loan_decisions_workflow_run_id")
+  @@index([status], map: "idx_loan_decisions_status")
+  @@index([decidedAt(sort: Desc)], map: "idx_loan_decisions_decided_at")
+  @@map("loan_decisions")
+}
+
+model ApprovalRecord {
+  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  loanRequestId    String    @map("loan_request_id") @db.Uuid
+  workflowRunId    String?   @map("workflow_run_id") @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  reviewerId       String?   @map("reviewer_id") @db.Uuid
+  reason           String
+  riskScore        Decimal?  @map("risk_score") @db.Decimal(5, 4)
+  aiRecommendation String?   @map("ai_recommendation") @db.VarChar(50)
+  policyFlags      Json?     @default("[]") @map("policy_flags")
+  status           String    @default("PENDING") @db.VarChar(50)
+  decision         String?   @db.VarChar(20)
+  reviewerNotes    String?   @map("reviewer_notes")
+  assignedAt       DateTime  @default(now()) @map("assigned_at") @db.Timestamptz
+  dueAt            DateTime  @map("due_at") @db.Timestamptz
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+
+  @@index([loanRequestId], map: "idx_approval_records_loan_request_id")
+  @@index([reviewerId], map: "idx_approval_records_reviewer_id")
+  @@index([status], map: "idx_approval_records_status")
+  @@index([dueAt], map: "idx_approval_records_due_at")
+  @@map("approval_records")
+}
+
+model AdverseActionNotice {
+  id             String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  loanRequestId  String    @map("loan_request_id") @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  generatedAt    DateTime  @default(now()) @map("generated_at") @db.Timestamptz
+  deliveredAt    DateTime? @map("delivered_at") @db.Timestamptz
+  deliveryMethod String?   @map("delivery_method") @db.VarChar(50)
+  deadlineAt     DateTime  @map("deadline_at") @db.Timestamptz
+  contentKey     String?   @map("content_key") @db.VarChar(500)
+  reasons        Json      @default("[]")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([loanRequestId], map: "idx_adverse_action_loan")
+  @@map("adverse_action_notices")
+}
+
+model GovernanceDecision {
+  id                    String   @id @db.Uuid
+  applicationId         String   @map("application_id") @db.Uuid
+  tenantId              String   @map("tenant_id")
+  decisionType          String   @map("decision_type")
+  decision              String
+  confidence            Decimal  @db.Decimal(6, 4)
+  riskScore             Decimal  @map("risk_score") @db.Decimal(6, 4)
+  riskLevel             String   @map("risk_level")
+  riskSignals           Json     @default("[]") @map("risk_signals")
+  policyOutcomes        Json     @default("[]") @map("policy_outcomes")
+  retrievedContextCount Int      @default(0) @map("retrieved_context_count")
+  aiRequestId           String?  @map("ai_request_id")
+  explanation           Json     @default("{}")
+  reasons               Json     @default("[]")
+  policyFailures        Json     @default("[]") @map("policy_failures")
+  recommendedActions    Json     @default("[]") @map("recommended_actions")
+  escalationReasons     Json     @default("[]") @map("escalation_reasons")
+  auditReference        String   @map("audit_reference") @db.Uuid
+  workflowRunId         String?  @map("workflow_run_id") @db.Uuid
+  correlationId         String   @map("correlation_id")
+  processingLatencyMs   Int      @map("processing_latency_ms")
+  decidedAt             DateTime @default(now()) @map("decided_at") @db.Timestamptz
+
+  @@index([applicationId, tenantId], map: "idx_governance_decisions_application_id")
+  @@index([tenantId, decidedAt(sort: Desc)], map: "idx_governance_decisions_tenant_decided")
+  @@index([decisionType, decision], map: "idx_governance_decisions_decision_type")
+  @@index([riskLevel, decidedAt(sort: Desc)], map: "idx_governance_decisions_risk_level")
+  @@index([auditReference], map: "idx_governance_decisions_audit_reference")
+  @@map("governance_decisions")
+}
+
+model DecisionFlow {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String    @map("tenant_id")
+  name         String
+  description  String?
+  version      String    @default("1.0.0")
+  status       String    @default("DRAFT")
+  createdBy    String    @map("created_by")
+  updatedBy    String?   @map("updated_by")
+  metadata     Json      @default("{}")
+  tags         String[]  @default([])
+  publishedAt  DateTime? @map("published_at") @db.Timestamptz
+  deprecatedAt DateTime? @map("deprecated_at") @db.Timestamptz
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+
+  nodes      DecisionNode[]
+  snapshots  FlowSnapshot[]
+  executions DecisionExecution[]
+
+  @@unique([tenantId, name, version])
+  @@index([tenantId, status, createdAt(sort: Desc)], map: "idx_decision_flows_tenant")
+  @@index([tenantId, name, version], map: "idx_decision_flows_name")
+  @@map("decision_flows")
+}
+
+model DecisionNode {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  flowId         String   @map("flow_id") @db.Uuid
+  tenantId       String   @map("tenant_id")
+  name           String
+  type           String
+  config         Json     @default("{}")
+  nextNodeId     String?  @map("next_node_id") @db.Uuid
+  fallbackNodeId String?  @map("fallback_node_id") @db.Uuid
+  branches       Json     @default("[]")
+  timeoutMs      Int      @default(30000) @map("timeout_ms")
+  retryAttempts  Int      @default(3) @map("retry_attempts")
+  retryDelayMs   Int      @default(1000) @map("retry_delay_ms")
+  positionX      Int      @default(0) @map("position_x")
+  positionY      Int      @default(0) @map("position_y")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  flow             DecisionFlow            @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  nextNode         DecisionNode?           @relation("NextNode", fields: [nextNodeId], references: [id])
+  fallbackNode     DecisionNode?           @relation("FallbackNode", fields: [fallbackNodeId], references: [id])
+  nextNodeFor      DecisionNode[]          @relation("NextNode")
+  fallbackNodeFor  DecisionNode[]          @relation("FallbackNode")
+  nodeExecutions   DecisionNodeExecution[]
+  approvalRequests ApprovalRequest[]
+
+  @@index([flowId, type], map: "idx_decision_nodes_flow")
+  @@map("decision_nodes")
+}
+
+model FlowSnapshot {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  flowId      String   @map("flow_id") @db.Uuid
+  tenantId    String   @map("tenant_id")
+  version     String
+  checksum    String
+  snapshot    Json
+  publishedBy String   @map("published_by")
+  publishedAt DateTime @default(now()) @map("published_at") @db.Timestamptz
+
+  flow       DecisionFlow        @relation(fields: [flowId], references: [id])
+  executions DecisionExecution[]
+
+  @@unique([flowId, version])
+  @@index([flowId, publishedAt(sort: Desc)], map: "idx_flow_snapshots_flow")
+  @@map("flow_snapshots")
+}
+
+model DecisionExecution {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String    @map("tenant_id")
+  flowId             String    @map("flow_id") @db.Uuid
+  flowSnapshotId     String?   @map("flow_snapshot_id") @db.Uuid
+  applicationId      String?   @map("application_id") @db.Uuid
+  workflowRunId      String?   @map("workflow_run_id") @db.Uuid
+  temporalWorkflowId String?   @map("temporal_workflow_id")
+  temporalRunId      String?   @map("temporal_run_id")
+  status             String    @default("PENDING")
+  input              Json      @default("{}")
+  output             Json?
+  executionTrace     Json      @default("[]") @map("execution_trace")
+  finalDecision      String?   @map("final_decision")
+  riskScore          Decimal?  @map("risk_score") @db.Decimal(6, 4)
+  confidence         Decimal?  @db.Decimal(6, 4)
+  explanation        Json?
+  idempotencyKey     String?   @unique @map("idempotency_key")
+  correlationId      String    @map("correlation_id")
+  initiatedBy        String?   @map("initiated_by")
+  initiatedByType    String    @default("SYSTEM") @map("initiated_by_type")
+  startedAt          DateTime? @map("started_at") @db.Timestamptz
+  completedAt        DateTime? @map("completed_at") @db.Timestamptz
+  pausedAt           DateTime? @map("paused_at") @db.Timestamptz
+  timeoutAt          DateTime? @map("timeout_at") @db.Timestamptz
+  processingMs       Int?      @map("processing_ms")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  flow         DecisionFlow  @relation(fields: [flowId], references: [id])
+  flowSnapshot FlowSnapshot? @relation(fields: [flowSnapshotId], references: [id])
+
+  @@index([tenantId, status, createdAt(sort: Desc)], map: "idx_de_tenant_status")
+  @@index([applicationId, tenantId], map: "idx_de_application")
+  @@index([flowId, createdAt(sort: Desc)], map: "idx_de_flow")
+  @@map("decision_executions")
+}
+
+model DecisionNodeExecution {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  executionId String    @map("execution_id") @db.Uuid
+  tenantId    String    @map("tenant_id")
+  nodeId      String    @map("node_id") @db.Uuid
+  nodeType    String    @map("node_type")
+  nodeName    String    @map("node_name")
+  status      String
+  input       Json      @default("{}")
+  output      Json?
+  error       Json?
+  durationMs  Int?      @map("duration_ms")
+  retryCount  Int       @default(0) @map("retry_count")
+  startedAt   DateTime  @default(now()) @map("started_at") @db.Timestamptz
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+
+  node DecisionNode @relation(fields: [nodeId], references: [id])
+
+  @@index([executionId, startedAt], map: "idx_dne_execution")
+  @@index([tenantId, nodeId], map: "idx_dne_tenant_node")
+  @@map("decision_node_executions")
+}
+
+model ApprovalRequest {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String    @map("tenant_id")
+  executionId        String    @map("execution_id") @db.Uuid
+  nodeId             String    @map("node_id") @db.Uuid
+  applicationId      String?   @map("application_id") @db.Uuid
+  assignedTo         String?   @map("assigned_to")
+  assignedRole       String?   @map("assigned_role")
+  status             String    @default("PENDING")
+  priority           String    @default("NORMAL")
+  decision           String?
+  decidedBy          String?   @map("decided_by")
+  decidedAt          DateTime? @map("decided_at") @db.Timestamptz
+  decisionNotes      String?   @map("decision_notes")
+  contextSnapshot    Json      @default("{}") @map("context_snapshot")
+  dueAt              DateTime  @map("due_at") @db.Timestamptz
+  escalateAt         DateTime? @map("escalate_at") @db.Timestamptz
+  escalatedTo        String?   @map("escalated_to")
+  escalatedAt        DateTime? @map("escalated_at") @db.Timestamptz
+  delegatedFromId    String?   @map("delegated_from") @db.Uuid
+  temporalWorkflowId String?   @map("temporal_workflow_id")
+  temporalSignalName String?   @map("temporal_signal_name")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+
+  node          DecisionNode      @relation(fields: [nodeId], references: [id])
+  delegatedFrom ApprovalRequest?  @relation("Delegation", fields: [delegatedFromId], references: [id])
+  delegations   ApprovalRequest[] @relation("Delegation")
+
+  @@index([tenantId, status, dueAt], map: "idx_approvals_tenant_status")
+  @@index([executionId, tenantId], map: "idx_approvals_execution")
+  @@index([applicationId, tenantId], map: "idx_approvals_application")
+  @@map("approval_requests")
+}

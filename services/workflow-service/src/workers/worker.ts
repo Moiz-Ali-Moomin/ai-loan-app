@@ -4,7 +4,7 @@ import { dirname, join } from 'path';
 import Long from 'long';
 import { Worker, NativeConnection } from '@temporalio/worker';
 import { Client as MinioClient } from 'minio';
-import { createPool } from '@loan-platform/database';
+import { createPool, prisma } from '@loan-platform/database';
 import { createKafkaClient, KafkaProducerClient, ensureTopicsExist } from '@loan-platform/kafka';
 import { createLogger } from '@loan-platform/logger';
 import { createLoanActivities } from '../activities/loan.activities.js';
@@ -61,7 +61,7 @@ async function run() {
   const kafkaProducer = new KafkaProducerClient(kafka);
   await kafkaProducer.connect();
 
-  const activities = createLoanActivities(pool, minioClient, kafkaProducer, {
+  const activities = createLoanActivities(prisma, minioClient, kafkaProducer, {
     policy: process.env['POLICY_SERVICE_URL'] ?? 'http://localhost:3002',
     ai: process.env['AI_SERVICE_URL'] ?? 'http://localhost:3003',
     audit: process.env['AUDIT_SERVICE_URL'] ?? 'http://localhost:3004',

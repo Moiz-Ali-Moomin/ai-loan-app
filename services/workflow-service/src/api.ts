@@ -6,7 +6,7 @@
 import './instrumentation.js';
 import Fastify, { type FastifyRequest } from 'fastify';
 import { Connection, Client } from '@temporalio/client';
-import { createPool } from '@loan-platform/database';
+import { createPool, prisma } from '@loan-platform/database';
 import { createLogger } from '@loan-platform/logger';
 
 const logger = createLogger('workflow-service:api');
@@ -67,10 +67,8 @@ async function buildApiServer() {
 
   // ── Pending approvals count ───────────────────────────────────
   fastify.get('/api/v1/approvals/pending-count', async (_, reply) => {
-    const { rows } = await pool.query(
-      "SELECT COUNT(*) as count FROM approval_records WHERE status = 'PENDING'"
-    );
-    return reply.send({ success: true, data: { count: parseInt(rows[0].count, 10) } });
+    const count = await prisma.approvalRecord.count({ where: { status: 'PENDING' } });
+    return reply.send({ success: true, data: { count } });
   });
 
   const shutdown = async () => {

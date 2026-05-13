@@ -1,10 +1,13 @@
 import { createHash, randomUUID } from 'crypto';
-import type { Pool } from 'pg';
 import type { AuditRecord, AuditMetadata, DecisionLineage } from '@loan-platform/shared-types';
 import { signAuditRecord, verifyAuditSignature } from '@loan-platform/crypto';
 import { createLogger } from '@loan-platform/logger';
+import { prisma as _prisma, Prisma } from '@loan-platform/database';
 
 const logger = createLogger('audit-service:repository');
+
+type PrismaClient = typeof _prisma;
+type PrismaTx = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'>;
 
 function buildHashInput(params: {
   id: string;
@@ -33,7 +36,7 @@ function buildHashInput(params: {
 }
 
 export class AuditRepository {
-  constructor(private readonly pool: Pool) {}
+  constructor(private readonly prisma: PrismaClient) {}
 
   async createRecord(params: {
     tenantId: string;
@@ -49,65 +52,58 @@ export class AuditRepository {
     const id = randomUUID();
     const timestamp = new Date().toISOString();
 
-    const { rows: prevRows } = await this.pool.query(
-      `SELECT hash FROM audit_logs WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 1`,
-      [params.tenantId]
-    );
-    const previousHash = prevRows[0]?.hash as string | undefined;
+    const record = await this.prisma.$transaction(async (tx: PrismaTx) => {
+      const prev = await tx.auditLog.findFirst({
+        where: { tenantId: params.tenantId },
+        orderBy: { createdAt: 'desc' },
+        select: { hash: true },
+      });
+      const previousHash = prev?.hash ?? undefined;
 
-    const hashInput = buildHashInput({
-      id,
-      tenantId: params.tenantId,
-      loanRequestId: params.loanRequestId,
-      eventType: params.eventType,
-      actorType: params.actorType,
-      serviceName: params.serviceName,
-      payload: params.payload,
-      traceId: params.metadata.traceId,
-      previousHash,
-      timestamp,
-    });
-
-    // SHA-256 chain hash (tamper-evident ordering)
-    const hash = createHash('sha256').update(hashInput).digest('hex');
-
-    // HMAC-SHA256 signature (tamper-evident content — requires AUDIT_HMAC_KEY)
-    // Falls back gracefully if key not configured (dev/test without secrets)
-    let signature: string | null = null;
-    try {
-      signature = signAuditRecord(hashInput);
-    } catch {
-      logger.warn('AUDIT_HMAC_KEY not set — audit record will not be HMAC-signed');
-    }
-
-    const { rows } = await this.pool.query(
-      `INSERT INTO audit_logs (
-        id, tenant_id, loan_request_id, workflow_run_id, event_type,
-        actor_id, actor_type, service_name, payload,
-        trace_id, span_id, correlation_id, version, environment,
-        hash, previous_hash, signature
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
-      RETURNING *`,
-      [
+      const hashInput = buildHashInput({
         id,
-        params.tenantId,
-        params.loanRequestId ?? null,
-        params.workflowRunId ?? null,
-        params.eventType,
-        params.actorId ?? null,
-        params.actorType,
-        params.serviceName,
-        JSON.stringify(params.payload),
-        params.metadata.traceId,
-        params.metadata.spanId ?? null,
-        params.metadata.correlationId,
-        params.metadata.version,
-        params.metadata.environment,
-        hash,
-        previousHash ?? null,
-        signature,
-      ]
-    );
+        tenantId: params.tenantId,
+        loanRequestId: params.loanRequestId,
+        eventType: params.eventType,
+        actorType: params.actorType,
+        serviceName: params.serviceName,
+        payload: params.payload,
+        traceId: params.metadata.traceId,
+        previousHash,
+        timestamp,
+      });
+
+      const hash = createHash('sha256').update(hashInput).digest('hex');
+
+      let signature: string | null = null;
+      try {
+        signature = signAuditRecord(hashInput);
+      } catch {
+        logger.warn('AUDIT_HMAC_KEY not set — audit record will not be HMAC-signed');
+      }
+
+      return tx.auditLog.create({
+        data: {
+          id,
+          tenantId: params.tenantId,
+          loanRequestId: params.loanRequestId ?? null,
+          workflowRunId: params.workflowRunId ?? null,
+          eventType: params.eventType,
+          actorId: params.actorId ?? null,
+          actorType: params.actorType,
+          serviceName: params.serviceName,
+          payload: params.payload as Prisma.InputJsonValue,
+          traceId: params.metadata.traceId,
+          spanId: params.metadata.spanId ?? null,
+          correlationId: params.metadata.correlationId,
+          version: params.metadata.version,
+          environment: params.metadata.environment,
+          hash,
+          previousHash: previousHash ?? null,
+          signature,
+        },
+      });
+    });
 
     logger.info('Audit record created', {
       id,
@@ -115,61 +111,70 @@ export class AuditRepository {
       tenantId: params.tenantId,
       loanRequestId: params.loanRequestId,
       traceId: params.metadata.traceId,
-      hmacSigned: signature !== null,
+      hmacSigned: record.signature !== null,
     });
 
-    return rows[0] as AuditRecord;
+    return record as unknown as AuditRecord;
   }
 
   async getByLoanRequest(loanRequestId: string): Promise<AuditRecord[]> {
-    const { rows } = await this.pool.query(
-      `SELECT * FROM audit_logs WHERE loan_request_id = $1 ORDER BY created_at ASC`,
-      [loanRequestId]
-    );
-    return rows as AuditRecord[];
+    const records = await this.prisma.auditLog.findMany({
+      where: { loanRequestId },
+      orderBy: { createdAt: 'asc' },
+    });
+    return records as unknown as AuditRecord[];
   }
 
   async getDecisionLineage(loanRequestId: string): Promise<DecisionLineage> {
-    const [auditRows, policyRows, aiRows, approvalRows] = await Promise.all([
-      this.pool.query('SELECT * FROM audit_logs WHERE loan_request_id = $1 ORDER BY created_at ASC', [loanRequestId]),
-      this.pool.query('SELECT policy_path, policy_version, decision, evaluated_at FROM policy_evaluations WHERE loan_request_id = $1', [loanRequestId]),
-      this.pool.query('SELECT model_version, prompt_version, risk_score, recommendation, decided_at FROM ai_decisions WHERE loan_request_id = $1', [loanRequestId]),
-      this.pool.query('SELECT reviewer_id, decision, completed_at FROM approval_records WHERE loan_request_id = $1', [loanRequestId]),
-    ]);
+    const auditRecords = await this.prisma.auditLog.findMany({
+      where: { loanRequestId },
+      orderBy: { createdAt: 'asc' },
+    });
+    const policyRows = await this.prisma.policyEvaluation.findMany({
+      where: { loanRequestId },
+      select: { policyPath: true, policyVersion: true, decision: true, evaluatedAt: true },
+    });
+    const aiRows = await this.prisma.aiDecision.findMany({
+      where: { loanRequestId },
+      select: { modelVersion: true, promptVersion: true, riskScore: true, recommendation: true, decidedAt: true },
+    });
+    const approvalRows = await this.prisma.approvalRecord.findMany({
+      where: { loanRequestId },
+      select: { reviewerId: true, decision: true, completedAt: true },
+    });
+    const workflowRun = await this.prisma.workflowRun.findFirst({
+      where: { loanRequestId },
+      select: { id: true },
+    });
 
-    const { rows: wfRows } = await this.pool.query(
-      'SELECT id FROM workflow_runs WHERE loan_request_id = $1 LIMIT 1',
-      [loanRequestId]
-    );
-
-    const timeline = (auditRows.rows as (AuditRecord & Record<string, unknown>)[]).map((r) => ({
-      timestamp: (r['created_at'] ?? r.createdAt) as string,
-      event: (r['event_type'] ?? r.eventType) as string,
-      actor: (r['actor_type'] ?? r.actorType) as string,
-      details: (r['service_name'] ?? r.serviceName) as string,
+    const timeline = auditRecords.map((r) => ({
+      timestamp: r.createdAt.toISOString(),
+      event: r.eventType,
+      actor: r.actorType,
+      details: r.serviceName,
     }));
 
     return {
       loanRequestId,
-      workflowRunId: (wfRows[0] as Record<string, unknown> | undefined)?.['id'] as string ?? '',
-      events: auditRows.rows as AuditRecord[],
-      policyVersions: policyRows.rows.map((r: Record<string, unknown>) => ({
-        policyName: String(r['policy_path']),
-        version: String(r['policy_version']),
-        evaluatedAt: String(r['evaluated_at']),
-        decision: String(r['decision']),
+      workflowRunId: workflowRun?.id ?? '',
+      events: auditRecords as unknown as AuditRecord[],
+      policyVersions: policyRows.map((r) => ({
+        policyName: r.policyPath,
+        version: r.policyVersion,
+        evaluatedAt: r.evaluatedAt.toISOString(),
+        decision: r.decision,
       })),
-      aiDecisions: aiRows.rows.map((r: Record<string, unknown>) => ({
-        modelVersion: String(r['model_version']),
-        promptVersion: String(r['prompt_version']),
-        riskScore: Number(r['risk_score']),
-        recommendation: String(r['recommendation']),
-        decidedAt: String(r['decided_at']),
+      aiDecisions: aiRows.map((r) => ({
+        modelVersion: r.modelVersion,
+        promptVersion: r.promptVersion,
+        riskScore: Number(r.riskScore),
+        recommendation: r.recommendation,
+        decidedAt: r.decidedAt.toISOString(),
       })),
-      humanApprovals: approvalRows.rows.map((r: Record<string, unknown>) => ({
-        reviewerId: String(r['reviewer_id']),
-        decision: String(r['decision']),
-        decidedAt: String(r['completed_at']),
+      humanApprovals: approvalRows.map((r) => ({
+        reviewerId: r.reviewerId ?? '',
+        decision: r.decision ?? '',
+        decidedAt: r.completedAt?.toISOString() ?? '',
       })),
       timeline,
     };
@@ -182,58 +187,54 @@ export class AuditRepository {
     hmacFailedAt?: string;
     totalRecords: number;
   }> {
-    const { rows } = await this.pool.query(
-      `SELECT id, hash, previous_hash, signature, tenant_id, loan_request_id,
-              event_type, actor_type, service_name, payload, trace_id, created_at
-       FROM audit_logs WHERE loan_request_id = $1 ORDER BY created_at ASC`,
-      [loanRequestId]
-    );
+    const records = await this.prisma.auditLog.findMany({
+      where: { loanRequestId },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true, hash: true, previousHash: true, signature: true,
+        tenantId: true, loanRequestId: true, eventType: true,
+        actorType: true, serviceName: true, payload: true,
+        traceId: true, createdAt: true,
+      },
+    });
 
     let hmacValid = true;
     let hmacFailedAt: string | undefined;
 
-    // Verify SHA-256 hash chain
-    for (let i = 1; i < rows.length; i++) {
-      const current = rows[i] as Record<string, unknown>;
-      const previous = rows[i - 1] as Record<string, unknown>;
-      if (current['previous_hash'] !== previous['hash']) {
-        logger.warn('Audit chain integrity violation', { id: current['id'], loanRequestId });
-        return { valid: false, brokenAt: String(current['id']), totalRecords: rows.length };
+    for (let i = 1; i < records.length; i++) {
+      if (records[i].previousHash !== records[i - 1].hash) {
+        logger.warn('Audit chain integrity violation', { id: records[i].id, loanRequestId });
+        return { valid: false, brokenAt: records[i].id, totalRecords: records.length };
       }
     }
 
-    // Verify HMAC signatures where present
-    for (const row of rows) {
-      const r = row as Record<string, unknown>;
-      const sig = r['signature'] as string | null;
-      if (!sig) continue;
-
+    for (const r of records) {
+      if (!r.signature) continue;
       const hashInput = buildHashInput({
-        id: String(r['id']),
-        tenantId: String(r['tenant_id']),
-        loanRequestId: r['loan_request_id'] ? String(r['loan_request_id']) : undefined,
-        eventType: String(r['event_type']),
-        actorType: String(r['actor_type']),
-        serviceName: String(r['service_name']),
-        payload: JSON.parse(String(r['payload'])) as Record<string, unknown>,
-        traceId: String(r['trace_id']),
-        previousHash: r['previous_hash'] ? String(r['previous_hash']) : undefined,
-        timestamp: String(r['created_at']),
+        id: r.id,
+        tenantId: r.tenantId,
+        loanRequestId: r.loanRequestId ?? undefined,
+        eventType: r.eventType,
+        actorType: r.actorType,
+        serviceName: r.serviceName,
+        payload: r.payload as Record<string, unknown>,
+        traceId: r.traceId ?? '',
+        previousHash: r.previousHash ?? undefined,
+        timestamp: r.createdAt.toISOString(),
       });
 
       try {
-        if (!verifyAuditSignature(hashInput, sig)) {
+        if (!verifyAuditSignature(hashInput, r.signature)) {
           hmacValid = false;
-          hmacFailedAt = String(r['id']);
-          logger.warn('Audit HMAC signature invalid', { id: r['id'], loanRequestId });
+          hmacFailedAt = r.id;
+          logger.warn('Audit HMAC signature invalid', { id: r.id, loanRequestId });
           break;
         }
       } catch {
-        // AUDIT_HMAC_KEY not configured — skip HMAC check
         break;
       }
     }
 
-    return { valid: true, hmacValid, hmacFailedAt, totalRecords: rows.length };
+    return { valid: true, hmacValid, hmacFailedAt, totalRecords: records.length };
   }
 }

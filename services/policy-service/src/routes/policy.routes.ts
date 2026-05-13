@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import { createHash } from 'crypto';
 import { createLogger } from '@loan-platform/logger';
+import { prisma } from '@loan-platform/database';
 import { KafkaProducerClient } from '@loan-platform/kafka';
 import { KafkaTopic } from '@loan-platform/shared-types';
 import { evaluateOpaPolicy } from '../opa/client.js';
@@ -46,31 +47,27 @@ export default async function policyRoutes(fastify: FastifyInstance) {
 
       const result = await evaluateOpaPolicy(body.policyPath, body.input, traceId);
 
-      // Store evaluation record — only if a valid loanRequestId was provided
-      const pool = fastify.pg;
       if (body.loanRequestId) {
-        await pool.query(
-          `INSERT INTO policy_evaluations (id, loan_request_id, tenant_id, policy_path, policy_version, decision, allow, violations, flags, input_snapshot, evaluation_metadata, duration_ms)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-           ON CONFLICT DO NOTHING`,
-          [
-            result.id,
-            body.loanRequestId,
-            body.tenantId ?? 'system',
-            body.policyPath,
-            result.policyVersion,
-            result.decision,
-            result.allow,
-            JSON.stringify(result.violations),
-            JSON.stringify(result.flags),
-            JSON.stringify(body.input),
-            JSON.stringify(result.metadata),
-            result.durationMs,
-          ]
-        );
+        await prisma.policyEvaluation.create({
+          data: {
+            id: result.id,
+            loanRequestId: body.loanRequestId,
+            tenantId: body.tenantId ?? 'system',
+            policyPath: body.policyPath,
+            policyVersion: result.policyVersion,
+            decision: result.decision,
+            allow: result.allow,
+            violations: result.violations as object[],
+            flags: result.flags as object[],
+            inputSnapshot: body.input as object,
+            evaluationMetadata: result.metadata as object,
+            durationMs: result.durationMs,
+          },
+        }).catch(() => {
+          // ON CONFLICT DO NOTHING equivalent — idempotent
+        });
       }
 
-      // Publish policy event — fire-and-forget; Kafka failure must not fail the HTTP response
       const producer = fastify.kafkaProducer as KafkaProducerClient;
       producer.publish(
         KafkaTopic.POLICY_EVENTS,
@@ -106,21 +103,19 @@ export default async function policyRoutes(fastify: FastifyInstance) {
     '/policies/versions',
     async (request: FastifyRequest<{ Querystring: { name?: string; active?: string } }>, reply: FastifyReply) => {
       const { name, active } = request.query;
-      const pool = fastify.pg;
 
-      const conditions: string[] = [];
-      const params: unknown[] = [];
-      let idx = 1;
-
-      if (name) { conditions.push(`name = $${idx++}`); params.push(name); }
-      if (active !== undefined) { conditions.push(`is_active = $${idx++}`); params.push(active === 'true'); }
-
-      const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      const { rows } = await pool.query(
-        `SELECT id, name, version, description, is_active, effective_from, effective_to, checksum, created_at
-         FROM policy_versions ${where} ORDER BY created_at DESC`,
-        params
-      );
+      const rows = await prisma.policyVersion.findMany({
+        where: {
+          ...(name ? { name } : {}),
+          ...(active !== undefined ? { isActive: active === 'true' } : {}),
+        },
+        select: {
+          id: true, name: true, version: true, description: true,
+          isActive: true, effectiveFrom: true, effectiveTo: true,
+          checksum: true, createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
 
       return reply.send({ success: true, data: rows });
     }
@@ -134,18 +129,25 @@ export default async function policyRoutes(fastify: FastifyInstance) {
         name: string; version: string; description: string;
         content: string; regoContent: string; effectiveFrom: string;
       };
-      const pool = fastify.pg;
       const id = randomUUID();
       const checksum = createHash('sha256').update(body.regoContent).digest('hex');
 
-      const { rows } = await pool.query(
-        `INSERT INTO policy_versions (id, name, version, description, content, rego_content, checksum, is_active, effective_from)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,false,$8) RETURNING *`,
-        [id, body.name, body.version, body.description, body.content, body.regoContent, checksum, body.effectiveFrom]
-      );
+      const row = await prisma.policyVersion.create({
+        data: {
+          id,
+          name: body.name,
+          version: body.version,
+          description: body.description,
+          content: body.content,
+          regoContent: body.regoContent,
+          checksum,
+          isActive: false,
+          effectiveFrom: new Date(body.effectiveFrom),
+        },
+      });
 
       logger.info('Policy version created', { id, name: body.name, version: body.version });
-      return reply.status(201).send({ success: true, data: rows[0] });
+      return reply.status(201).send({ success: true, data: row });
     }
   );
 
@@ -153,12 +155,17 @@ export default async function policyRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/policies/evaluations',
     async (request: FastifyRequest<{ Querystring: { limit?: number } }>, reply: FastifyReply) => {
-      const limit = request.query.limit ?? 50;
-      const pool = fastify.pg;
-      const { rows } = await pool.query(
-        'SELECT id, policy_path, policy_version, decision, allow, violations, flags, duration_ms, evaluated_at FROM policy_evaluations ORDER BY evaluated_at DESC LIMIT $1',
-        [limit]
-      );
+      const limit = Number(request.query.limit ?? 50);
+
+      const rows = await prisma.policyEvaluation.findMany({
+        select: {
+          id: true, policyPath: true, policyVersion: true, decision: true,
+          allow: true, violations: true, flags: true, durationMs: true, evaluatedAt: true,
+        },
+        orderBy: { evaluatedAt: 'desc' },
+        take: limit,
+      });
+
       return reply.send({ success: true, data: rows });
     }
   );

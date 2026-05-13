@@ -81,6 +81,6 @@ export const policyApi = {
 
 // ── Public (no auth required) ────────────────────────────────
 export const publicLoansApi = {
-  submit: (data: unknown) => publicApi.post('/loans', data),
-  getStatus: (id: string) => publicApi.get(`/loans/${id}`),
+  submit: (data: unknown) => publicApi.post('/public/loans', data),
+  getStatus: (id: string) => publicApi.get(`/public/loans/${id}`),
 };
