@@ -8,10 +8,10 @@ const nav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/loans', label: 'Loan Applications', icon: FileText },
   { href: '/dashboard/approvals', label: 'Pending Reviews', icon: ShieldCheck },
-  { href: '/dashboard/ai-decisions', label: 'AI Decisions', icon: Brain },
-  { href: '/dashboard/audit', label: 'Audit Trail', icon: BookOpen },
-  { href: '/dashboard/observability', label: 'Observability', icon: Activity },
-  { href: '/dashboard/policies', label: 'Policies', icon: Scale },
+  { href: '/dashboard/ai-decisions', label: 'Decision Log', icon: Brain },
+  { href: '/dashboard/audit', label: 'Audit Log', icon: BookOpen },
+  { href: '/dashboard/observability', label: 'System Health', icon: Activity },
+  { href: '/dashboard/policies', label: 'Lending Policies', icon: Scale },
 ];
 
 export function Sidebar() {

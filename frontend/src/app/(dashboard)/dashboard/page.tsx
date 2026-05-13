@@ -41,8 +41,8 @@ export default function DashboardPage() {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">Governance Dashboard</h1>
-        <p className="text-slate-500 mt-1">Real-time AI loan decision overview</p>
+        <h1 className="text-2xl font-bold text-slate-900">Overview</h1>
+        <p className="text-slate-500 mt-1">Loan applications at a glance</p>
       </div>
 
       {/* KPI Cards */}

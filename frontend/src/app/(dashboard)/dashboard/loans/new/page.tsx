@@ -7,6 +7,21 @@ import Link from 'next/link';
 
 const DEFAULT_TENANT = '11111111-1111-1111-1111-111111111111';
 
+const LOAN_TYPES = [
+  { value: 'PERSONAL', label: 'Personal Loan' },
+  { value: 'BUSINESS', label: 'Business Loan' },
+  { value: 'MORTGAGE', label: 'Mortgage' },
+  { value: 'AUTO', label: 'Auto Loan' },
+  { value: 'STUDENT', label: 'Student Loan' },
+];
+
+const EMPLOYMENT_STATUSES = [
+  { value: 'EMPLOYED', label: 'Employed' },
+  { value: 'SELF_EMPLOYED', label: 'Self-Employed' },
+  { value: 'UNEMPLOYED', label: 'Unemployed' },
+  { value: 'RETIRED', label: 'Retired' },
+];
+
 interface FormState {
   tenantId: string;
   loanType: string;
@@ -132,10 +147,6 @@ const [form, setForm] = useState<FormState>(INITIAL);
               <span className="text-xs text-slate-500">Loan Request ID</span>
               <div className="font-mono text-sm text-slate-800">{submitted.loanRequestId}</div>
             </div>
-            <div>
-              <span className="text-xs text-slate-500">Temporal Workflow ID</span>
-              <div className="font-mono text-sm text-slate-800">{submitted.workflowId}</div>
-            </div>
           </div>
           <div className="flex gap-3 justify-center">
             <Link
@@ -164,7 +175,7 @@ const [form, setForm] = useState<FormState>(INITIAL);
 
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">New Loan Application</h1>
-        <p className="text-slate-500 mt-1">Submit a loan application for AI governance processing</p>
+        <p className="text-slate-500 mt-1">Create a new loan application on behalf of an applicant</p>
       </div>
 
       <form
@@ -177,8 +188,8 @@ const [form, setForm] = useState<FormState>(INITIAL);
           <div className="grid grid-cols-2 gap-4">
             <Field label="Loan Type" required>
               <select value={form.loanType} onChange={set('loanType')} className={inputClass}>
-                {['PERSONAL', 'BUSINESS', 'MORTGAGE', 'AUTO', 'STUDENT'].map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                {LOAN_TYPES.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
                 ))}
               </select>
             </Field>
@@ -222,8 +233,8 @@ const [form, setForm] = useState<FormState>(INITIAL);
             </Field>
             <Field label="Employment Status" required>
               <select value={form.employmentStatus} onChange={set('employmentStatus')} className={inputClass}>
-                {['EMPLOYED', 'SELF_EMPLOYED', 'UNEMPLOYED', 'RETIRED'].map((s) => (
-                  <option key={s} value={s}>{s.replace('_', ' ')}</option>
+                {EMPLOYMENT_STATUSES.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
                 ))}
               </select>
             </Field>

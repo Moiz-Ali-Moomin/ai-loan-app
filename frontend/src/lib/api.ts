@@ -7,6 +7,12 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Unauthenticated client for public-facing pages (apply flow, status tracker)
+export const publicApi = axios.create({
+  baseURL: `${API_URL}/api/v1`,
+  headers: { 'Content-Type': 'application/json' },
+});
+
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('auth_token');
@@ -71,4 +77,10 @@ export const policyApi = {
     api.get('/policies/evaluations', { params }),
   getVersions: (params?: { name?: string; active?: string }) =>
     api.get('/policies/versions', { params }),
+};
+
+// ── Public (no auth required) ────────────────────────────────
+export const publicLoansApi = {
+  submit: (data: unknown) => publicApi.post('/loans', data),
+  getStatus: (id: string) => publicApi.get(`/loans/${id}`),
 };
