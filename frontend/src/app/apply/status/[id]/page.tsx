@@ -115,7 +115,7 @@ export default function ApplicationStatusPage({ params }: { params: { id: string
         </div>
         <h2 className="text-lg font-bold text-slate-900 mb-2">Application Not Found</h2>
         <p className="text-slate-500 text-sm mb-6 max-w-xs mx-auto">
-          We couldn't find an application with that reference number. Double-check the number and try again.
+          We couldn&apos;t find an application with that reference number. Double-check the number and try again.
         </p>
         <Link href="/apply/status" className="inline-flex items-center gap-2 text-sm text-brand-600 hover:underline font-medium">
           <ArrowLeft className="w-4 h-4" /> Try again

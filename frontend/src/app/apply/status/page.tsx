@@ -41,7 +41,7 @@ export default function StatusLookupPage() {
       </form>
 
       <p className="text-xs text-slate-400 mt-6">
-        Can't find your reference number? Check the confirmation email we sent you, or{' '}
+        Can&apos;t find your reference number? Check the confirmation email we sent you, or{' '}
         <a href="mailto:support@loangov.com" className="text-brand-600 hover:underline">contact support</a>.
       </p>
     </div>

@@ -120,7 +120,7 @@ function SuccessScreen({ loanId }: { loanId: string }) {
       </div>
       <h2 className="text-2xl font-bold text-slate-900 mb-2">Application Submitted!</h2>
       <p className="text-slate-500 text-sm mb-8 max-w-sm mx-auto">
-        We've received your application and it's being reviewed now. You'll typically hear back within minutes.
+        We&apos;ve received your application and it&apos;s being reviewed now. You&apos;ll typically hear back within minutes.
       </p>
 
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 max-w-sm mx-auto mb-8">
@@ -131,7 +131,7 @@ function SuccessScreen({ loanId }: { loanId: string }) {
             {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
           </button>
         </div>
-        <p className="text-xs text-slate-400 mt-3">Save this — you'll need it to track your application.</p>
+        <p className="text-xs text-slate-400 mt-3">Save this — you&apos;ll need it to track your application.</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
